@@ -1,0 +1,622 @@
+<template>
+	<div :class="channel+'-content'">
+		<div :style="'width: '+ leftWidth +'px;'">
+			<div :style="lfetStyle">
+				<!-- <div :style="qrcodeStyle">
+					<image :src="qrcodeData" mode="widthFix" :style="qrcodeImageStyle"></image>
+				</div> -->
+				<div :style="lfetTopStyle">
+					<div v-if="$store.state.socket.order"  :style="payOrderStyle">
+						<image :style="paySuccessStyle" src="/static/icon/paySuccess.png"></image>
+						<text :style="orderShowStyle">{{orderShow($store.state.socket.order)}}</text>
+						<text :style="orderFeeStyle">{{fee($store.state.socket.order.totalFee)}}</text>
+					</div>
+					<div v-else>
+						<image v-if="channel=='icbc'" :style="adImageStyle" src="/static/AdIcbc.png"></image>
+						<image v-if="channel=='default'" :style="adImageStyle" src="/static/AdDefault.png"></image>
+						<!-- <div v-if="channel=='default'" :style="payOrderAdStyle">
+							<image :style="adIconStyle" src="/static/icon/ad.png"></image>
+							<text :style="orderShowStyle">400-104-6788</text>
+							<text :style="adTextStyle">广告位招商</text>
+
+							<div >
+								<text :style="adTitle">必诚业务介绍</text>
+								<text :style="adTextStyle">餐饮及零售收银软件及相关设备；商户数字化运营服务；智慧油站、智慧校园、智慧物业、智慧商圈建设；银行信用卡活动策划及推广；银行软硬件及支付收单业务外包；聚合支付系统及支付接口的开发等。</text>
+							</div>
+						</div> -->
+					</div>
+				</div>
+				<div :style="lfetFootStyle">
+					<div :style="lfetFootRightStyle">
+						<div :style="lfetFootRightIconStyle">
+							<image :style="lfetFootIconStyle" :src="'/static/icon/wechat.png'"></image>
+							<image :style="lfetFootIconStyle" :src="'/static/icon/alipay.png'"></image>
+							<image :style="lfetFootIconStyle" :src="'/static/icon/unionpay.png'"></image>
+						</div>
+						<text :style="dateStyle">{{parseTime($store.state.healthy.date, '{y}-{m}-{d} {h}:{i}:{s}')}}</text>
+					</div>
+					<image v-if="channel=='icbc'" :style="logoStyle" src="/static/icon/icbc.png"></image>
+					<image :style="logoStyle" src="/static/logoFoot.png"></image>
+				</div>
+			</div>
+		</div>
+		<div :style="'width: '+ rightWidth +'px;'">
+			<div :style="orderStyle">
+				<div :style="headerStyle">
+					<div class="title">
+						<image :style="headerIcon" src="/static/icon/order.png"></image>
+						<text :style="headerText">订单管理</text>
+					</div>
+					<div class="headerRight">
+						<image :style="headerIcon" :src="socketStatus"></image>
+						<div :style="headerRightVersionStyle">
+							<text :style="versionStyle">版本号: v{{version}}.{{versionCode}}</text>
+							<text :style="versionStyle">分辨率: {{screenWidth}}x{{screenHeight}}</text>
+							<text :style="versionStyle">设备号: {{deviceId}}</text>
+						</div>
+					</div>
+				</div>
+				<list v-if="$store.state.socket.orderList.length" :style="ordersStyle">
+					<cell v-for="(item, index) in $store.state.socket.orderList">
+						<view class="ordersItem" :tabindex="index">
+							<div class="ordersLeft">
+								<div class="ordersLeft1">
+									<image :style="ordersIconStyle" :src="'/static/icon/'+item.method+'.png'"></image>
+									<text :style="ordersMethodStyle">{{showMethod(item.method)}}</text>
+								</div>
+								<div :style="ordersLeft2Style">
+									<text :style="ordersTitleStyle" :class="index===0 ?'one' :''">{{limitLength(item.title)}}</text>
+									<text :style="ordersTimeStyle">{{item.createdAt}}</text>
+								</div>
+							</div>
+							<div class="ordersRight">
+								<text :style="ordersTotalFeeStyle" :class="index===0 ?'one' :''">{{fee(item.totalFee)}}</text>
+								<text class="ordersStatus">支付成功</text>
+							</div>
+						</view>
+					</cell>
+				</list>
+				<div v-else :style="orderEmptyStyle">
+					<text :style="orderEmptyTextStyle">暂无订单</text>
+				</div>
+			</div>
+		</div>
+	</div>
+</template>
+
+<script>
+	import { mapState } from 'vuex'
+	import { parseTime } from '@/utils'
+	import { baseTVUrl } from '@/settings.js'
+	const ikiwNvueQrcode = uni.requireNativePlugin("Ikiw-NvueQrcode")
+	export default {
+		computed: {
+			...mapState({
+				payQrcodeUrl: state => state.settings.payQrcodeUrl,
+				order: state => state.socket.order
+			}),
+		},
+		data() {
+			return {
+				logo: "./static/logo.png",
+				screenHeight: 720,
+				screenWidth: 1280,
+				deviceId: '',
+				version:'',
+				versionCode: '',
+				userId: '',
+				qrcodeData:'',
+			}
+		},
+		computed: {
+			channel() {
+				let channel = uni.getStorageSync('channel')
+				if (this.$store.state.socket.order) {
+					uni.setStorageSync('channel', this.$store.state.socket.order.channel)
+				}
+				return channel==='icbc'? channel: 'default'
+			},
+			socketStatus() {
+				const status = this.$store.state.socket.status ? 'socketStatusOn' : 'socketStatusOff';
+				return '/static/icon/'+status+'.png'
+			},
+			lfetStyle() {
+				const height = this.screenHeight-20
+				const width10px = this.screenWidth*0.015
+				return `
+					height: `+ height +`px;
+					border-radius: `+width10px+`px;
+					margin: `+width10px+`px `+width10px+`px `+width10px+`px 10px;
+					
+					align-items: space-between;
+					justify-content: space-between;				
+				`
+			},
+			lfetFootStyle() {
+				const height = this.screenHeight*0.11
+				return `
+					height: `+ height +`px;
+					flex-direction: row;
+					align-items: center;
+					justify-content: space-between;
+				`
+			},
+			lfetFootRightStyle() {
+				return `
+					flex-direction: column;
+					align-items: space-between;
+					justify-content: space-between;
+				`
+			},
+			lfetFootRightIconStyle() {
+				return `
+					width: `+this.screenWidth*0.12+`px;	
+					flex-direction: row;
+					align-items: space-between;
+					justify-content: space-between;
+				`
+			},
+			lfetFootIconStyle() {
+				const width40px = this.screenWidth*0.03
+				return `
+					width: `+width40px+`px;
+					height: `+width40px+`px;
+				`
+			},
+			logoStyle() {
+				const width = this.screenWidth*0.11
+				const height = this.screenWidth*0.05
+				return 'width: '+ width +'px;height: '+ height +'px;'
+			},
+			dateStyle() {
+				const widthpx = this.screenWidth*0.13
+				const width25px = this.screenWidth*0.0125
+				return `
+					width: `+widthpx+`px; 
+					font-size: `+width25px+`px;
+					color: #ffffff;
+					margin-top: 5px;
+				`
+			},
+			qrcodeStyle() {
+				const height = this.screenHeight*0.75
+				return `
+					height: `+ height +`px;
+					flex-direction: column;
+					align-items: center;
+					justify-content: space-between;
+				`
+			},
+			lfetTopStyle() {
+				const height = this.screenHeight*0.80
+				const width10px = this.screenWidth*0.015
+				const width = this.screenWidth*0.352
+				return `
+					width: `+width+`px;
+					height: `+ height +`px;
+					border-radius: `+width10px+`px;
+					background-color: #ffffff;
+					flex-direction: row;
+					align-items: center;
+					justify-content: center;
+				`
+			},
+			payOrderStyle() {
+				const height = this.screenHeight*0.75
+				return `
+					height: `+ height +`px;
+					flex-direction: column;
+					align-items: center;
+					justify-content: center;
+				`
+			},
+			paySuccessStyle() {
+				const width100px = this.screenWidth*0.1
+				return `
+					width: `+width100px+`px;
+					height: `+width100px+`px;
+				`
+			},
+			orderShowStyle() {
+				const width30px = this.screenWidth*0.03
+				const width10px = this.screenWidth*0.015
+				return `
+					font-size: `+width30px+`px;
+					color: #606266;
+					margin: `+width10px+`px;
+				`
+			},
+			payOrderAdStyle() {
+				const height = this.screenHeight*0.75
+				return `
+					height: `+ height +`px;
+					flex-direction: column;
+					align-items: center;
+					justify-content: center;
+				`
+			},
+			adImageStyle() {
+				// const height = this.screenHeight*0.80
+				// const width10px = this.screenWidth*0.015
+				// return `
+				// 	height: `+ height +`px;
+				// 	border-radius: `+width10px+`px;
+				// `
+				const height = this.screenHeight*0.80
+				const width10px = this.screenWidth*0.015
+				const width = this.screenWidth*0.352
+				return `
+					width: `+width+`px;
+					height: `+ height +`px;
+					border-radius: `+width10px+`px;
+				`
+			},
+			orderFeeStyle() {
+				const width50px = this.screenWidth*0.05
+				return `
+					font-size: `+width50px+`px;
+					color: #11B986;
+				`
+			},
+			adIconStyle() {
+				const width100px = this.screenWidth*0.15
+				return `
+					height: `+width100px+`px;
+				`
+			},
+			adTitle() {
+				const width30px = this.screenWidth*0.03
+				const width10px = this.screenWidth*0.015
+				return `
+					font-size: `+width30px+`px;
+					font-weight: 900;
+					color: #7d33ff;
+					margin: `+width10px+`px;
+				`
+			},
+			adTextStyle() {
+				const width50px = this.screenWidth*0.023
+				const width100px = this.screenWidth*0.33
+				return `
+					width: `+width100px+`px;
+					font-size: `+width50px+`px;
+					color: #909399;
+				`
+			},
+			qrcodeImageStyle() {
+				let width = this.screenWidth*0.369
+				let height = this.screenHeight*0.75
+				if (height < width) {
+					width = height
+				}else{
+					height = width
+				}
+				return 'width: '+ width +'px;height: '+ height +'px;border-radius: 10px;'
+			},
+			leftWidth() {
+				return this.screenWidth*0.382
+			},
+			rightWidth() {
+				return this.screenWidth*0.618
+			},
+			orderHeight() {
+				return this.screenHeight-20
+			},
+			orderStyle() {
+				const height = this.screenHeight-20
+				const width10px = this.screenWidth*0.015
+				return `
+					height: `+ height +`px;
+					background: #ffffff;
+					border-radius: `+width10px+`px;
+					margin: `+width10px+`px `+width10px+`px `+width10px+`px 0px;
+				`
+			},
+			headerStyle() {
+				const width10px = this.screenWidth*0.015
+				return `
+					flex-direction: row;
+					align-items: center;
+					justify-content: space-between;
+					padding: `+width10px+`px;
+					border-bottom: 1px solid #e5e5e5;
+				`
+			},
+			versionStyle() {
+				const width5px = this.screenWidth*0.01
+				return `
+					font-size: `+width5px+`px;
+					color: #909399;
+				`
+			},
+			headerText() {
+				const width10px = this.screenWidth*0.015
+				const width25px = this.screenWidth*0.03
+				var color = '#7d33ff'
+				switch (this.channel) {
+					case "icbc":
+						color = "#9e0b02"
+						break;
+					default:
+						color = "#9e0b02"
+				}
+				return `
+					font-size: `+width25px+`px;
+					color: `+color+`;
+					margin-left: `+width10px+`px;
+				`
+			},
+			headerIcon() {
+				const width25px = this.screenWidth*0.03
+				return `
+					width: `+width25px+`px;
+					height: `+width25px+`px;
+				`
+			},
+			headerRightVersionStyle() {
+				const width5px = this.screenWidth*0.005
+				return `
+					margin-left: `+width5px+`px;
+					align-items: flex-start;
+					justify-content: space-between;
+				`
+			},
+			ordersStyle() {
+				const width10px = this.screenWidth*0.015
+				return `
+					padding: `+width10px+`px;
+				`
+			},
+			ordersIconStyle() {
+				const width40px = this.screenWidth*0.055
+				return `
+					width: `+width40px+`px;
+					height: `+width40px+`px;
+				`
+			},
+			ordersMethodStyle() {
+				const width10px = this.screenWidth*0.015
+				return `
+					font-size: `+width10px+`px;
+					color: #909399;
+				`
+			},
+			ordersLeft2Style() {
+				const width10px = this.screenWidth*0.015
+				return `
+					flex-direction: column;
+					align-items: flex-start;
+					justify-content: space-between;
+					padding-left: `+width10px+`px;
+				`
+			},
+			ordersTitleStyle() {
+				const width35px = this.screenWidth*0.045
+				return `
+					font-size: `+width35px+`px;
+					font-weight: 900;
+				`
+			},
+			ordersTimeStyle() {
+				const width10px = this.screenWidth*0.015
+				return `
+					font-size: `+width10px+`px;
+					color: #909399;
+				`
+			},
+			ordersTotalFeeStyle() {
+				const width30px = this.screenWidth*0.039
+				return `
+					font-size: `+width30px+`px;
+					font-weight: 900;
+				`
+			},
+			orderEmptyStyle() {
+				const height = this.screenHeight*0.6
+				return `
+					height: `+ height +`px;
+					flex-direction: row;
+					align-items: center;
+					justify-content: center;
+				`
+			},
+			orderEmptyTextStyle() {
+				const width10px = this.screenWidth*0.035
+				return `
+					font-size: `+width10px+`px;
+					color: #909399;
+				`
+			}
+		},
+		beforeCreate() {
+			// // 加载图标
+			// var domModule = weex.requireModule('dom')
+			// domModule.addRule('fontFace', {
+			// 	'fontFamily': "colourIcon",
+			// 	'src': "url('http://at.alicdn.com/t/font_2797057_lhyyi1e7l4g.ttf?t=1645774559814')"
+			// })
+		},
+		onLoad() {
+			this.$store.dispatch('tts/init')
+			this.$store.dispatch('settings/initConfig')
+			this.systemUpdate()
+			plus.navigator.setFullscreen(true) //隐藏状态栏
+			this.init()
+		},
+		methods: {
+			init() {
+				uni.getSystemInfo({ 
+                	success: (res) => {
+						this.deviceId = res.deviceId;
+						this.screenHeight = res.screenHeight
+						this.screenWidth = res.screenWidth
+						// if (this.screenWidth < this.screenHeight) {
+		   			 	// 	plus.screen.lockOrientation("landscape-primary") // 横屏锁定
+						// }
+						this.$store.dispatch('socket/webSocket',this.deviceId)
+					}
+				})
+			},
+			initQrcode(res) {
+				ikiwNvueQrcode.generate({
+                    text: this.payQrcodeUrl+'?user_id='+this.userId,
+                    ico: '',
+                    color: "#7d33ff"
+                },
+                (ret) => {
+					this.qrcodeData = ret.data
+                })
+			},
+			// 限制7个汉字长度
+			limitLength(str) {
+				if (str) {
+					if (str.length > 7) {
+						return str.substring(0, 7) + '...'
+					} else {
+						return str
+					}
+				}
+				return ''
+			},
+			parseTime(time, cFormat) {
+				return parseTime(time, cFormat)
+			},
+			orderShow(order){
+				let text = "收款"
+				if (order.operatorName) {
+					text = order.operatorName+text
+				}else{
+					text = this.showMethod(order.method)+text
+				}
+				return text
+			},
+			showMethod(key) {
+				switch (key) {
+					case 'wechat':
+						return '微信支付'
+					case 'alipay':
+						return '支付宝'
+					case 'unionpay':
+						return '银联云闪付'
+					case 'credit':
+						return '信用卡'
+					case 'card':
+						return '银行卡'
+					case 'digital':
+						return '数字货币'
+				}
+			},
+			fee(number) { // 是否存在不存在返回0
+				return ((number ? Number(number) : 0)/100).toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,")
+			},
+			systemUpdate(){
+				// #ifdef APP-PLUS
+				plus.runtime.getProperty(plus.runtime.appid, (widgetInfo) => {
+					this.versionCode = widgetInfo.versionCode
+					this.version = widgetInfo.version
+					uni.request({
+						url: baseTVUrl+'manifest.json',
+						success: (result) => {
+							// 增则替换字符串中文
+							let { versionCode, versionName } = JSON.parse(result.data.replace(/\/\*{1,2}[\s\S]*?\*\//g,""))
+							// 判断版本名是否一致
+							if (versionName === widgetInfo.version) {
+								// 如果安装的版本号小于最新发布的版本号，则进行更新
+								if (parseInt(widgetInfo.versionCode) != parseInt(versionCode)) {
+									// 下载wgt更新包
+									let downloadPath = baseTVUrl+plus.runtime.appid+".wgt"
+									uni.downloadFile({
+										url: downloadPath,
+										success: (downloadResult) => {
+											if (downloadResult.statusCode === 200) {
+												plus.runtime.install(downloadResult.tempFilePath, {
+													force: true // 强制更新
+												}, () => {
+													console.log('热更新成功');
+													plus.runtime.restart();
+												}, (e) => {
+													console.error('热更新失败，错误原因：' + e);
+												});
+											}
+										},
+										fail: (error) => {
+											console.log("uni.downloadFile",error)
+										}
+									})
+								} else {
+									console.log('你的版本为最新，不需要热更新');
+								}
+							} else {
+								console.log('版本名不一致，请使用整包更新');
+							}
+						},
+						fail: (error) => {
+							 console.log("systemUpdate"+ JSON.stringify(error));
+						}
+					});
+				});
+				//  #endif
+			}
+		}
+	}
+</script>
+
+<style>
+	.icbc-content {
+		flex: 1;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		background: #9e0b02;
+	}
+	.default-content {
+		flex: 1;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		background: #9e0b02; 
+		/* background: #7d33ff;*/
+	}
+	.title{
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+	}
+	.headerRight{
+		flex-direction: row;
+		align-items: flex-end;
+		justify-content: space-between;
+	}
+	.ordersItem{
+		/* flex: 1; */
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+	}
+	.ordersLeft{
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+	}
+	.ordersLeft1{
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+	.ordersRight{
+		flex-direction: column;
+		align-items: flex-end;
+		justify-content: space-between;
+		/* padding-right: 10px; */
+	}
+	.ordersStatus{
+		color: #67C23A;
+	}
+	/* .colourIcon{
+		font-family:colourIcon;
+		font-size:26px;
+	} */
+	.one{
+		color: #F56C6C;
+	}
+</style>
