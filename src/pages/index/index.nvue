@@ -444,19 +444,21 @@
 			this.init()
 		},
 		methods: {
-			init() {
-				uni.getSystemInfo({ 
-                	success: (res) => {
-						this.deviceId = res.deviceId;
-						this.screenHeight = res.screenHeight
-						this.screenWidth = res.screenWidth
-						// if (this.screenWidth < this.screenHeight) {
-		   			 	// 	plus.screen.lockOrientation("landscape-primary") // 横屏锁定
-						// }
-						this.$store.dispatch('socket/webSocket',this.deviceId)
-					}
-				})
-			},
+				init() {
+					uni.getSystemInfo({ 
+						success: (res) => {
+							this.deviceId = res.deviceId;
+							// 使用 windowWidth/windowHeight (nvue 实际可用渲染区域)
+							const winW = Math.max(res.windowWidth, res.windowHeight)
+							const winH = Math.min(res.windowWidth, res.windowHeight)
+							// 以高度为基准，按16:9比例计算宽度，保证不失真
+							const ratio16x9 = Math.round(winH * 16 / 9)
+							this.screenWidth = Math.min(winW, ratio16x9)
+							this.screenHeight = winH
+							this.$store.dispatch('socket/webSocket',this.deviceId)
+						}
+					})
+				},
 			initQrcode(res) {
 				ikiwNvueQrcode.generate({
                     text: this.payQrcodeUrl+'?user_id='+this.userId,

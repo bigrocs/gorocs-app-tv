@@ -5,7 +5,7 @@
  * @LastEditors: BigRocs
  * @Description: QQ: 532388887, Email:bigrocs@qq.com
  */
-const FvvUniTTS = uni.requireNativePlugin("Fvv-UniTTS");
+const FvvUniTTS = uni.requireNativePlugin ? uni.requireNativePlugin("Fvv-UniTTS") : null;
 const state = {
 	isTtsInit: false,
 }
@@ -15,6 +15,7 @@ const mutations = {
 
 const actions = {
   init({ commit,state }) {
+	if (!FvvUniTTS) return;
 	FvvUniTTS.init((callback) => {
 		state.isTtsInit = true
 		actions.speak({ commit,state }, {text:"欢迎使用必诚付",id:"1"})
