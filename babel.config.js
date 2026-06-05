@@ -51,6 +51,7 @@ process.UNI_LIBRARIES.forEach(libraryName => {
 })
 module.exports = {
   presets: [
+    '@babel/preset-typescript',
     [
       '@vue/app',
       {

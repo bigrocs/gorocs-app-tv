@@ -1,0 +1,35 @@
+/* 页面容器 */
+.screen {
+	flex: 1;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+}
+
+/* 顶部栏 */
+.headerLeft {
+	flex-direction: row;
+	align-items: center;
+	margin-right: 25px;
+}
+.headerCenter {
+	flex-direction: row;
+	align-items: center;
+	margin-right: 50px;
+}
+.headerRight {
+	flex-direction: row;
+	align-items: center;
+}
+
+/* 订单卡片 */
+.orderCardLeft {
+	flex: 1;
+	flex-direction: row;
+	align-items: center;
+}
+.orderCardRight {
+	flex-direction: column;
+	align-items: flex-end;
+	justify-content: center;
+}

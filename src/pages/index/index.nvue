@@ -1,624 +1,515 @@
 <template>
-	<div :class="channel+'-content'">
-		<div :style="'width: '+ leftWidth +'px;'">
-			<div :style="lfetStyle">
-				<!-- <div :style="qrcodeStyle">
-					<image :src="qrcodeData" mode="widthFix" :style="qrcodeImageStyle"></image>
-				</div> -->
-				<div :style="lfetTopStyle">
-					<div v-if="$store.state.socket.order"  :style="payOrderStyle">
-						<image :style="paySuccessStyle" src="/static/icon/paySuccess.png"></image>
-						<text :style="orderShowStyle">{{orderShow($store.state.socket.order)}}</text>
-						<text :style="orderFeeStyle">{{fee($store.state.socket.order.totalFee)}}</text>
-					</div>
-					<div v-else>
-						<image v-if="channel=='icbc'" :style="adImageStyle" src="/static/AdIcbc.png"></image>
-						<image v-if="channel=='default'" :style="adImageStyle" src="/static/AdDefault.png"></image>
-						<!-- <div v-if="channel=='default'" :style="payOrderAdStyle">
-							<image :style="adIconStyle" src="/static/icon/ad.png"></image>
-							<text :style="orderShowStyle">400-104-6788</text>
-							<text :style="adTextStyle">广告位招商</text>
+	<div class="screen" :style="screenBgStyle">
+		<div :style="containerStyle">
 
-							<div >
-								<text :style="adTitle">必诚业务介绍</text>
-								<text :style="adTextStyle">餐饮及零售收银软件及相关设备；商户数字化运营服务；智慧油站、智慧校园、智慧物业、智慧商圈建设；银行信用卡活动策划及推广；银行软硬件及支付收单业务外包；聚合支付系统及支付接口的开发等。</text>
-							</div>
-						</div> -->
-					</div>
+			<!-- 顶部状态栏 -->
+			<div :style="headerBarStyle">
+				<div class="headerLeft">
+					<image :style="headerLogoStyle" mode="aspectFit" :src="logoSrc"></image>
 				</div>
-				<div :style="lfetFootStyle">
-					<div :style="lfetFootRightStyle">
-						<div :style="lfetFootRightIconStyle">
-							<image :style="lfetFootIconStyle" :src="'/static/icon/wechat.png'"></image>
-							<image :style="lfetFootIconStyle" :src="'/static/icon/alipay.png'"></image>
-							<image :style="lfetFootIconStyle" :src="'/static/icon/unionpay.png'"></image>
+					<div class="headerCenter">
+						<div style="flex-direction: column; align-items: flex-end; justify-content: center; margin-right: 30px;">
+							<text :style="connTextStyle" v-if="maintainerText">设备维护: {{maintainerName}}</text>
+							<text :style="connTextStyle" v-if="maintainerText">{{maintainerPhone}}</text>
 						</div>
-						<text :style="dateStyle">{{parseTime($store.state.healthy.date, '{y}-{m}-{d} {h}:{i}:{s}')}}</text>
+						<image :style="headerPhoneIconStyle" mode="aspectFit" src="/static/service.png"></image>
+						<text :style="headerPhoneStyle">400-104-6788</text>
 					</div>
-					<image v-if="channel=='icbc'" :style="logoStyle" src="/static/icon/icbc.png"></image>
-					<image :style="logoStyle" src="/static/logoFoot.png"></image>
+				<div class="headerRight">
+					<image :style="headerConnIconStyle" mode="aspectFit" :src="mqttStatusIcon"></image>
 				</div>
 			</div>
-		</div>
-		<div :style="'width: '+ rightWidth +'px;'">
-			<div :style="orderStyle">
-				<div :style="headerStyle">
-					<div class="title">
-						<image :style="headerIcon" src="/static/icon/order.png"></image>
-						<text :style="headerText">订单管理</text>
-					</div>
-					<div class="headerRight">
-						<image :style="headerIcon" :src="socketStatus"></image>
-						<div :style="headerRightVersionStyle">
-							<text :style="versionStyle">版本号: v{{version}}.{{versionCode}}</text>
-							<text :style="versionStyle">分辨率: {{screenWidth}}x{{screenHeight}}</text>
-							<text :style="versionStyle">设备号: {{deviceId}}</text>
+
+			<!-- 时间日期区 (absolute) -->
+			<text :style="dateStyle">{{currentDate}}</text>
+			<text :style="timeStyle">{{currentTime}}</text>
+			<text :style="sloganStyle">即时播报·拒绝漏单</text>
+			<image :style="middleImageStyle" mode="aspectFit" :src="middleSrc"></image>
+
+			<!-- 推广背景图 (absolute, 45%~100%H) -->
+			<image :style="promoBgImageStyle" mode="aspectFill" :src="promoBgSrc"></image>
+
+			<!-- 中国必诚 / 一起必诚 (absolute) -->
+			<image :style="promoTitleImageStyle" mode="aspectFit" :src="promoTitleSrc"></image>
+			<image :style="promoBottomImageStyle" mode="aspectFit" :src="promoBottomSrc"></image>
+
+
+			<!-- 特色图标1: 收款便捷 -->
+			<div :style="getFeatCircleStyle(0.05)">
+				<image :style="getFeatIconStyle(0.049)" mode="aspectFit" :src="featIconSrc('wallet')"></image>
+			</div>
+			<text :style="getFeatLabelStyle(0.05)">收款便捷</text>
+			<text :style="getFeatDescStyle(0.05, 0.88)">多种收款方式</text>
+			<text :style="getFeatDescStyle(0.05, 0.90)">轻松支付更流畅</text>
+
+			<!-- 特色图标2: 资金安全 -->
+			<div :style="getFeatCircleStyle(0.15)">
+				<image :style="getFeatIconStyle(0.149)" mode="aspectFit" :src="featIconSrc('secure')"></image>
+			</div>
+			<text :style="getFeatLabelStyle(0.15)">资金安全</text>
+			<text :style="getFeatDescStyle(0.15, 0.88)">银行级风控保障</text>
+			<text :style="getFeatDescStyle(0.15, 0.90)">资金安全可靠</text>
+
+			<!-- 特色图标3: 经营清晰 -->
+			<div :style="getFeatCircleStyle(0.25)">
+				<image :style="getFeatIconStyle(0.249)" mode="aspectFit" :src="featIconSrc('report')"></image>
+			</div>
+			<text :style="getFeatLabelStyle(0.25)">经营清晰</text>
+			<text :style="getFeatDescStyle(0.25, 0.88)">收款记录一目了然</text>
+			<text :style="getFeatDescStyle(0.25, 0.90)">对账轻松更省心</text>
+
+			<!-- 特色图标4: 贴心服务 -->
+			<div :style="getFeatCircleStyle(0.35)">
+				<image :style="getFeatIconStyle(0.349)" mode="aspectFit" :src="featIconSrc('support')"></image>
+			</div>
+			<text :style="getFeatLabelStyle(0.35)">贴心服务</text>
+			<text :style="getFeatDescStyle(0.35, 0.88)">专属客服支持</text>
+			<text :style="getFeatDescStyle(0.35, 0.90)">经营路上更安心</text>
+
+			<!-- 右侧面板 (absolute) -->
+			<div :style="rightColumnStyle">
+					<div :style="orderHeaderStyle">
+						<div style="flex-direction: row; align-items: center;">
+							<image :style="orderHeaderIconStyle" mode="aspectFit" src="/static/icon/order.png"></image>
+							<text :style="orderHeaderTextStyle">订单管理</text>
+						</div>
+						<div :style="deviceInfoStyle">
+							<text :style="deviceInfoTextStyle">分辨率: {{screenWidth}}x{{screenHeight}}</text>
+							<text :style="deviceInfoTextStyle">版本号: v{{version}}.{{versionCode}}</text>
+							<text :style="deviceInfoTextStyle">设备号: {{deviceId}}</text>
 						</div>
 					</div>
-				</div>
-				<list v-if="$store.state.socket.orderList.length" :style="ordersStyle">
-					<cell v-for="(item, index) in $store.state.socket.orderList">
-						<view class="ordersItem" :tabindex="index">
-							<div class="ordersLeft">
-								<div class="ordersLeft1">
-									<image :style="ordersIconStyle" :src="'/static/icon/'+item.method+'.png'"></image>
-									<text :style="ordersMethodStyle">{{showMethod(item.method)}}</text>
-								</div>
-								<div :style="ordersLeft2Style">
-									<text :style="ordersTitleStyle" :class="index===0 ?'one' :''">{{limitLength(item.title)}}</text>
-									<text :style="ordersTimeStyle">{{item.createdAt}}</text>
+				<list v-if="orderList.length" :style="orderListStyle">
+					<cell v-for="(item, index) in orderList" :key="item.outTradeNo">
+						<div :style="getOrderCardStyle(item.status)">
+							<div class="orderCardLeft">
+								<image :style="orderIconStyle" mode="aspectFit" :src="'/static/icon/'+item.method+'.png'"></image>
+								<div :style="orderInfoStyle">
+									<text :style="getOrderStatusTextStyle(item.status)">{{getStatusText(item.status, item.totalFee)}}</text>
+									<text :style="orderTimeStyle">{{item.createdAt}}</text>
 								</div>
 							</div>
-							<div class="ordersRight">
-								<text :style="ordersTotalFeeStyle" :class="index===0 ?'one' :''">{{fee(item.totalFee)}}</text>
-								<text class="ordersStatus">支付成功</text>
+							<div class="orderCardRight">
+								<text :style="getOrderFeeStyle(item.status)">{{fmtFee(item.totalFee)}}</text>
+						</div>
 							</div>
-						</view>
 					</cell>
 				</list>
-				<div v-else :style="orderEmptyStyle">
-					<text :style="orderEmptyTextStyle">暂无订单</text>
+				<div v-else :style="emptyStyle">
+					<image :style="emptyIconStyle" mode="aspectFit" src="/static/icon/order.png"></image>
+					<text :style="emptyTextStyle">暂无订单</text>
 				</div>
 			</div>
+
 		</div>
 	</div>
 </template>
 
 <script>
-	import { mapState } from 'vuex'
-	import { parseTime } from '@/utils'
-	import { baseTVUrl } from '@/settings.js'
-	const ikiwNvueQrcode = uni.requireNativePlugin("Ikiw-NvueQrcode")
+	import { baseTVUrl, themeName, themes } from '@/settings'
+	import { formatFee as fmtFee, getStatusColor, getStatusText, getFeeColor } from '@/utils/order'
+	import { getCurrentTime, getCurrentDate, startClock } from '@/utils/datetime'
+
+	const theme = themes[themeName]
+	const themeDir = '/static/theme/' + themeName
+
 	export default {
-		computed: {
-			...mapState({
-				payQrcodeUrl: state => state.settings.payQrcodeUrl,
-				order: state => state.socket.order
-			}),
-		},
 		data() {
 			return {
-				logo: "./static/logo.png",
 				screenHeight: 720,
 				screenWidth: 1280,
 				deviceId: '',
-				version:'',
+				version: '',
 				versionCode: '',
-				userId: '',
-				qrcodeData:'',
+				currentTime: '',
+				currentDate: '',
+				clockTimer: null,
 			}
 		},
 		computed: {
-			channel() {
-				let channel = uni.getStorageSync('channel')
-				if (this.$store.state.socket.order) {
-					uni.setStorageSync('channel', this.$store.state.socket.order.channel)
-				}
-				return channel==='icbc'? channel: 'default'
+			// ── 主题图片路径 ──
+			logoSrc() { return themeDir + "/../logo-cyt.png" },
+			middleSrc() { return themeDir + "/middle.png" },
+			promoBgSrc() { return themeDir + "/bottom/bottom_bg.png" },
+			promoTitleSrc() { return themeDir + "/zgbc.png" },
+			promoBottomSrc() { return themeDir + "/yqbc.png" },
+
+			// ── 页面背景 ──
+			screenBgStyle() { return `background-color: ${theme.bgColor};` },
+
+			// ── MQTT 状态 ──
+			mqttConnected() {
+				return this.$store.state.mqtt ? this.$store.state.mqtt.connected : false
 			},
-			socketStatus() {
-				const status = this.$store.state.socket.status ? 'socketStatusOn' : 'socketStatusOff';
-				return '/static/icon/'+status+'.png'
+			mqttStatusIcon() {
+				return '/static/icon/' + (this.mqttConnected ? 'socketStatusOn.png' : 'socketStatusOff.png')
 			},
-			lfetStyle() {
-				const height = this.screenHeight-20
-				const width10px = this.screenWidth*0.015
+			orderList() {
+				return this.$store.state.mqtt ? this.$store.state.mqtt.orderList : []
+			},
+							maintainerText() {
+								const config = this.$store.state.iot ? this.$store.state.iot.config : null
+					return (this.$store.state.iot && this.$store.state.iot.config && this.$store.state.iot.config.TVMaintainer) || '王梓'
+							},
+							maintainerName() {
+								const config = this.$store.state.iot ? this.$store.state.iot.config : null
+								if (config && config.TVMaintainer) return config.TVMaintainer
+								return '王梓'
+							},
+							maintainerPhone() {
+								const config = this.$store.state.iot ? this.$store.state.iot.config : null
+								if (config && config.TVMaintainerPhone) return config.TVMaintainerPhone
+								return '13301421395'
+							},
+
+			// ── 容器 ──
+			containerStyle() {
 				return `
-					height: `+ height +`px;
-					border-radius: `+width10px+`px;
-					margin: `+width10px+`px `+width10px+`px `+width10px+`px 10px;
-					
-					align-items: space-between;
-					justify-content: space-between;				
+					width: ${Math.round(this.screenHeight * 16 / 9)}px;
+					height: ${this.screenHeight}px;
+					background-color: ${theme.bgColor};
 				`
 			},
-			lfetFootStyle() {
-				const height = this.screenHeight*0.11
+
+			// ── 顶部状态栏 (absolute) ──
+			headerBarStyle() {
+				const h = this.screenHeight * 0.07
 				return `
-					height: `+ height +`px;
+					position: absolute;
+					top: ${this.screenHeight * 0.02}px;
+					left: 0;
+					width: ${Math.round(this.screenHeight * 16 / 9)}px;
+					height: ${h}px;
 					flex-direction: row;
 					align-items: center;
-					justify-content: space-between;
+					justify-content: flex-start;
+					padding-left: ${this.screenHeight * 0.015}px;
+					padding-right: ${this.screenHeight * 0.015}px;
 				`
 			},
-			lfetFootRightStyle() {
-				return `
-					flex-direction: column;
-					align-items: space-between;
-					justify-content: space-between;
-				`
+			headerLogoStyle() {
+				const h = this.screenHeight * 0.1
+				const w = h * 3
+				return `width: ${w}px; height: ${h}px;`
 			},
-			lfetFootRightIconStyle() {
-				return `
-					width: `+this.screenWidth*0.12+`px;	
-					flex-direction: row;
-					align-items: space-between;
-					justify-content: space-between;
-				`
+			headerPhoneIconStyle() {
+				const s = this.screenHeight * 0.038
+				return `width: ${s}px; height: ${s}px; margin-right: ${this.screenHeight * 0.01}px;`
 			},
-			lfetFootIconStyle() {
-				const width40px = this.screenWidth*0.03
-				return `
-					width: `+width40px+`px;
-					height: `+width40px+`px;
-				`
+			headerPhoneStyle() {
+				const fs = this.screenHeight * 0.044
+				return `font-size: ${fs}px; font-weight: 700; color: #ffffff; margin-right: ${this.screenHeight * 0.05}px;`
 			},
-			logoStyle() {
-				const width = this.screenWidth*0.11
-				const height = this.screenWidth*0.05
-				return 'width: '+ width +'px;height: '+ height +'px;'
+			headerConnIconStyle() {
+				const s = this.screenHeight * 0.015
+				return `width: ${s}px; height: ${s}px; margin-right: ${this.screenHeight * 0.005}px;`
 			},
+			headerInfoStyle() {
+				const fs = this.screenHeight * 0.013
+				return `font-size: ${fs}px; color: rgba(255,255,255,0.95); margin-left: ${this.screenHeight * 0.01}px;`
+			},
+			headerSmallStyle() {
+				const fs = this.screenHeight * 0.011
+				return `font-size: ${fs}px; color: rgba(255,255,255,0.8); margin-left: ${this.screenHeight * 0.01}px;`
+			},
+			headerTinyStyle() {
+				const fs = this.screenHeight * 0.01
+				return `font-size: ${fs}px; color: rgba(255,255,255,0.7); margin-left: ${this.screenHeight * 0.01}px;`
+			},
+
+			// ── 时间日期区 (absolute) ──
 			dateStyle() {
-				const widthpx = this.screenWidth*0.13
-				const width25px = this.screenWidth*0.0125
-				return `
-					width: `+widthpx+`px; 
-					font-size: `+width25px+`px;
-					color: #ffffff;
-					margin-top: 5px;
-				`
+				const fs = this.screenHeight * 0.049
+				return `position: absolute; top: ${this.screenHeight * 0.10}px; left: ${this.screenHeight * 0.01}px; font-size: ${fs}px; color: #ffffff; font-weight: 600; letter-spacing: 2px;`
 			},
-			qrcodeStyle() {
-				const height = this.screenHeight*0.75
-				return `
-					height: `+ height +`px;
-					flex-direction: column;
-					align-items: center;
-					justify-content: space-between;
-				`
+			timeStyle() {
+				const fs = this.screenHeight * 0.2
+				return `position: absolute; top: ${this.screenHeight * 0.14}px; left: ${this.screenHeight * 0.08}px; font-size: ${fs}px; font-weight: 900; color: #ffffff; font-family: 'sans-serif-medium'; width: ${this.screenHeight * 0.50}px;`
 			},
-			lfetTopStyle() {
-				const height = this.screenHeight*0.80
-				const width10px = this.screenWidth*0.015
-				const width = this.screenWidth*0.352
-				return `
-					width: `+width+`px;
-					height: `+ height +`px;
-					border-radius: `+width10px+`px;
-					background-color: #ffffff;
-					flex-direction: row;
-					align-items: center;
-					justify-content: center;
-				`
+			sloganStyle() {
+				const fs = this.screenHeight * 0.07
+					return `position: absolute; top: ${this.screenHeight * 0.355}px; left: ${this.screenHeight * 0.01}px; font-size: ${fs}px; color: #ffffff; font-weight: 500; background-color: rgba(255, 255, 255, 0.5); border-radius: ${this.screenHeight * 0.02}px; padding: ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px;`
 			},
-			payOrderStyle() {
-				const height = this.screenHeight*0.75
-				return `
-					height: `+ height +`px;
-					flex-direction: column;
-					align-items: center;
-					justify-content: center;
-				`
+			middleImageStyle() {
+					const h = this.screenHeight * 0.35
+					const w = h * (240 / 265)
+					return `position: absolute; top: ${this.screenHeight * 0.09}px; left: ${this.screenHeight * 0.605}px; width: ${w}px; height: ${h}px; border-radius: ${this.screenHeight * 0.012}px; overflow: hidden; box-shadow: 0 ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px rgba(0,0,0,0.3);`
 			},
-			paySuccessStyle() {
-				const width100px = this.screenWidth*0.1
-				return `
-					width: `+width100px+`px;
-					height: `+width100px+`px;
-				`
+
+			// ── 推广背景图 (absolute, 45%~100%H) ──
+				promoBgImageStyle() {
+					const h = this.screenHeight * 0.53
+					const w = h * (1185 / 685)
+					const r = this.screenHeight * 0.012
+					return `position: absolute; top: ${this.screenHeight * 0.45}px; left: ${this.screenHeight * 0.008}px; width: ${w}px; height: ${h}px; border-radius: ${r}px; overflow: hidden; box-shadow: 0 ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px rgba(0,0,0,0.3);`
+				},
+
+			// ── 中国必诚 / 一起必诚 (absolute) ──
+			promoTitleImageStyle() {
+				const h = this.screenHeight * 0.2
+				const w = h * 2.1
+				return `position: absolute; top: ${this.screenHeight * 0.50}px; left: ${this.screenHeight * 0.03}px; width: ${w}px; height: ${h}px;`
 			},
-			orderShowStyle() {
-				const width30px = this.screenWidth*0.03
-				const width10px = this.screenWidth*0.015
-				return `
-					font-size: `+width30px+`px;
-					color: #606266;
-					margin: `+width10px+`px;
-				`
+			promoBottomImageStyle() {
+				const h = this.screenHeight * 0.17
+				const w = h * 2.5
+				return `position: absolute; top: ${this.screenHeight * 0.63}px; left: ${this.screenHeight * 0.03}px; width: ${w}px; height: ${h}px;`
 			},
-			payOrderAdStyle() {
-				const height = this.screenHeight*0.75
-				return `
-					height: `+ height +`px;
-					flex-direction: column;
-					align-items: center;
-					justify-content: center;
-				`
-			},
-			adImageStyle() {
-				// const height = this.screenHeight*0.80
-				// const width10px = this.screenWidth*0.015
-				// return `
-				// 	height: `+ height +`px;
-				// 	border-radius: `+width10px+`px;
-				// `
-				const height = this.screenHeight*0.80
-				const width10px = this.screenWidth*0.015
-				const width = this.screenWidth*0.352
-				return `
-					width: `+width+`px;
-					height: `+ height +`px;
-					border-radius: `+width10px+`px;
-				`
-			},
-			orderFeeStyle() {
-				const width50px = this.screenWidth*0.05
-				return `
-					font-size: `+width50px+`px;
-					color: #11B986;
-				`
-			},
-			adIconStyle() {
-				const width100px = this.screenWidth*0.15
-				return `
-					height: `+width100px+`px;
-				`
-			},
-			adTitle() {
-				const width30px = this.screenWidth*0.03
-				const width10px = this.screenWidth*0.015
-				return `
-					font-size: `+width30px+`px;
-					font-weight: 900;
-					color: #7d33ff;
-					margin: `+width10px+`px;
-				`
-			},
-			adTextStyle() {
-				const width50px = this.screenWidth*0.023
-				const width100px = this.screenWidth*0.33
-				return `
-					width: `+width100px+`px;
-					font-size: `+width50px+`px;
-					color: #909399;
-				`
-			},
-			qrcodeImageStyle() {
-				let width = this.screenWidth*0.369
-				let height = this.screenHeight*0.75
-				if (height < width) {
-					width = height
-				}else{
-					height = width
-				}
-				return 'width: '+ width +'px;height: '+ height +'px;border-radius: 10px;'
-			},
-			leftWidth() {
-				return this.screenWidth*0.382
-			},
-			rightWidth() {
-				return this.screenWidth*0.618
-			},
-			orderHeight() {
-				return this.screenHeight-20
-			},
-			orderStyle() {
-				const height = this.screenHeight-20
-				const width10px = this.screenWidth*0.015
-				return `
-					height: `+ height +`px;
-					background: #ffffff;
-					border-radius: `+width10px+`px;
-					margin: `+width10px+`px `+width10px+`px `+width10px+`px 0px;
-				`
-			},
-			headerStyle() {
-				const width10px = this.screenWidth*0.015
-				return `
-					flex-direction: row;
-					align-items: center;
-					justify-content: space-between;
-					padding: `+width10px+`px;
-					border-bottom: 1px solid #e5e5e5;
-				`
-			},
-			versionStyle() {
-				const width5px = this.screenWidth*0.01
-				return `
-					font-size: `+width5px+`px;
-					color: #909399;
-				`
-			},
-			headerText() {
-				const width10px = this.screenWidth*0.015
-				const width25px = this.screenWidth*0.03
-				var color = '#7d33ff'
-				switch (this.channel) {
-					case "icbc":
-						color = "#9e0b02"
-						break;
-					default:
-						color = "#9e0b02"
-				}
-				return `
-					font-size: `+width25px+`px;
-					color: `+color+`;
-					margin-left: `+width10px+`px;
-				`
-			},
-			headerIcon() {
-				const width25px = this.screenWidth*0.03
-				return `
-					width: `+width25px+`px;
-					height: `+width25px+`px;
-				`
-			},
-			headerRightVersionStyle() {
-				const width5px = this.screenWidth*0.005
-				return `
-					margin-left: `+width5px+`px;
-					align-items: flex-start;
-					justify-content: space-between;
-				`
-			},
-			ordersStyle() {
-				const width10px = this.screenWidth*0.015
-				return `
-					padding: `+width10px+`px;
-				`
-			},
-			ordersIconStyle() {
-				const width40px = this.screenWidth*0.055
-				return `
-					width: `+width40px+`px;
-					height: `+width40px+`px;
-				`
-			},
-			ordersMethodStyle() {
-				const width10px = this.screenWidth*0.015
-				return `
-					font-size: `+width10px+`px;
-					color: #909399;
-				`
-			},
-			ordersLeft2Style() {
-				const width10px = this.screenWidth*0.015
-				return `
-					flex-direction: column;
-					align-items: flex-start;
-					justify-content: space-between;
-					padding-left: `+width10px+`px;
-				`
-			},
-			ordersTitleStyle() {
-				const width35px = this.screenWidth*0.045
-				return `
-					font-size: `+width35px+`px;
-					font-weight: 900;
-				`
-			},
-			ordersTimeStyle() {
-				const width10px = this.screenWidth*0.015
-				return `
-					font-size: `+width10px+`px;
-					color: #909399;
-				`
-			},
-			ordersTotalFeeStyle() {
-				const width30px = this.screenWidth*0.039
-				return `
-					font-size: `+width30px+`px;
-					font-weight: 900;
-				`
-			},
-			orderEmptyStyle() {
-				const height = this.screenHeight*0.6
-				return `
-					height: `+ height +`px;
-					flex-direction: row;
-					align-items: center;
-					justify-content: center;
-				`
-			},
-			orderEmptyTextStyle() {
-				const width10px = this.screenWidth*0.035
-				return `
-					font-size: `+width10px+`px;
-					color: #909399;
-				`
-			}
-		},
-		beforeCreate() {
-			// // 加载图标
-			// var domModule = weex.requireModule('dom')
-			// domModule.addRule('fontFace', {
-			// 	'fontFamily': "colourIcon",
-			// 	'src': "url('http://at.alicdn.com/t/font_2797057_lhyyi1e7l4g.ttf?t=1645774559814')"
-			// })
+
+			// ── 右侧面板 (absolute) ──
+				rightColumnStyle() {
+					const w = this.screenHeight * 8 / 9
+					const r = this.screenHeight * 0.015
+					const p = this.screenHeight * 0.01
+					return `position: absolute; top: ${this.screenHeight * 0.03}px; left: ${w + this.screenHeight * 0.06}px; width: ${w - this.screenHeight * 0.075}px; height: ${this.screenHeight * 0.95}px; flex-direction: column; background-color: ${theme.panelBg}; border-radius: ${r}px; padding-top: ${p}px; padding-bottom: ${p}px; padding-left: ${this.screenHeight * 0.05}px; padding-right: ${this.screenHeight * 0.05}px;`
+				},
+				orderListStyle() {
+					return `flex: 1;`
+				},
+					orderHeaderStyle() {
+						const px = this.screenHeight * 0.01
+						const py = this.screenHeight * 0.008
+						return `flex-direction: row; align-items: center; justify-content: space-between; padding: ${py}px ${px}px; padding-bottom: ${this.screenHeight * 0.009}px; border-bottom-width: 1px; border-bottom-color: #ffffff; margin-bottom: ${py}px;`
+					},
+					orderHeaderIconStyle() {
+						const s = this.screenHeight * 0.025
+						return `width: ${s}px; height: ${s}px; margin-right: ${this.screenHeight * 0.008}px;`
+					},
+					orderHeaderTextStyle() {
+						const fs = this.screenHeight * 0.036
+						return `font-size: ${fs}px; font-weight: 700; color: #ffffff;`
+					},
+					connTextStyle() {
+							const fs = this.screenHeight * 0.025
+							return `font-size: ${fs}px; font-weight: 400; color: rgba(255,255,255,0.85);`
+					},
+					deviceInfoStyle() {
+						return "flex-direction: column; align-items: flex-end; justify-content: center; flex-shrink: 0;"
+					},
+					deviceInfoTextStyle() {
+						const fs = this.screenHeight * 0.014
+						return `font-size: ${fs}px; font-weight: 400; color: rgba(255,255,255,0.8);`
+					},
+
+
+				// ── 订单图标 ──
+				orderIconStyle() {
+					const s = this.screenHeight * 0.05
+					return `width: ${s}px; height: ${s}px;`
+				},
+				orderInfoStyle() {
+					return `flex: 1; flex-direction: column; justify-content: center; margin-left: ${this.screenHeight * 0.01}px;`
+				},
+				orderTimeStyle() {
+					const fs = this.screenHeight * 0.014
+					return `font-size: ${fs}px; color: #909399;`
+				},
+
+				// ── 空状态 ──
+				emptyStyle() {
+					return `flex: 1; flex-direction: column; align-items: center; justify-content: center;`
+				},
+				emptyIconStyle() {
+					const s = this.screenHeight * 0.04
+					return `width: ${s}px; height: ${s}px; margin-bottom: ${this.screenHeight * 0.02}px; opacity: 0.3;`
+				},
+				emptyTextStyle() {
+					const fs = this.screenHeight * 0.02
+					return `font-size: ${fs}px; color: #999999;`
+				},
 		},
 		onLoad() {
 			this.$store.dispatch('tts/init')
-			this.$store.dispatch('settings/initConfig')
-			this.systemUpdate()
-			plus.navigator.setFullscreen(true) //隐藏状态栏
+			plus.navigator.setFullscreen(true)
 			this.init()
+			this.systemUpdate()
+		},
+		onUnload() {
+			if (this.clockTimer) {
+				clearInterval(this.clockTimer)
+				this.clockTimer = null
+			}
+			this.$store.dispatch('mqtt/disconnect')
 		},
 		methods: {
-				init() {
-					uni.getSystemInfo({ 
-						success: (res) => {
-							this.deviceId = res.deviceId;
-							// 使用 windowWidth/windowHeight (nvue 实际可用渲染区域)
-							const winW = Math.max(res.windowWidth, res.windowHeight)
-							const winH = Math.min(res.windowWidth, res.windowHeight)
-							// 以高度为基准，按16:9比例计算宽度，保证不失真
-							const ratio16x9 = Math.round(winH * 16 / 9)
-							this.screenWidth = Math.min(winW, ratio16x9)
-							this.screenHeight = winH
-							this.$store.dispatch('socket/webSocket',this.deviceId)
-						}
+			// ── 初始化 ──
+			init() {
+				uni.getSystemInfo({
+					success: (res) => {
+						this.deviceId = res.deviceId
+						const winW = Math.max(res.windowWidth, res.windowHeight)
+						const winH = Math.min(res.windowWidth, res.windowHeight)
+						this.screenHeight = winH
+
+						this.clockTimer = startClock(() => {
+							this.currentTime = getCurrentTime()
+							this.currentDate = getCurrentDate()
+						}, 1000)
+
+					// ── 测试订单（共20条，填满面板） ──
+					this.$store.commit("mqtt/PUSH_ORDER", {
+					  outTradeNo: "TEST2000",
+					  method: "wechat",
+					  status: 1,
+					  totalFee: 12800,
+					  createdAt: "2026-06-05 20:15:32",
 					})
-				},
-			initQrcode(res) {
-				ikiwNvueQrcode.generate({
-                    text: this.payQrcodeUrl+'?user_id='+this.userId,
-                    ico: '',
-                    color: "#7d33ff"
-                },
-                (ret) => {
-					this.qrcodeData = ret.data
-                })
-			},
-			// 限制7个汉字长度
-			limitLength(str) {
-				if (str) {
-					if (str.length > 7) {
-						return str.substring(0, 7) + '...'
-					} else {
-						return str
+					this.$store.commit("mqtt/PUSH_ORDER", {
+					  outTradeNo: "TEST2001",
+					  method: "alipay",
+					  status: 1,
+					  totalFee: 5600,
+					  createdAt: "2026-06-05 20:13:32",
+					})
+					this.$store.commit("mqtt/PUSH_ORDER", {
+					  outTradeNo: "TEST2002",
+					  method: "unionpay",
+					  status: 1,
+					  totalFee: 35200,
+					  createdAt: "2026-06-05 20:11:32",
+					})
+					this.$store.commit("mqtt/PUSH_ORDER", {
+					  outTradeNo: "TEST2003",
+					  method: "credit",
+					  status: 0,
+					  totalFee: 9900,
+					  createdAt: "2026-06-05 20:09:32",
+					})
+					this.$store.commit("mqtt/PUSH_ORDER", {
+					  outTradeNo: "TEST2004",
+					  method: "card",
+					  status: -1,
+					  totalFee: 1500,
+					  createdAt: "2026-06-05 20:07:32",
+					})
+					this.$store.commit("mqtt/PUSH_ORDER", {
+					  outTradeNo: "TEST2005",
+					  method: "digital",
+					  status: 1,
+					  totalFee: 88800,
+					  createdAt: "2026-06-05 20:05:32",
+					})
+					this.$store.commit("mqtt/PUSH_ORDER", {
+					  outTradeNo: "TEST2006",
+					  method: "wechat",
+					  status: 1,
+					  totalFee: 100,
+					  createdAt: "2026-06-05 20:03:32",
+					})
+					this.$store.commit("mqtt/PUSH_ORDER", {
+					  outTradeNo: "TEST2007",
+					  method: "alipay",
+					  status: 1,
+					  totalFee: 25600,
+					  createdAt: "2026-06-05 20:01:32",
+					})
+					this.$store.commit("mqtt/PUSH_ORDER", {
+					  outTradeNo: "TEST2008",
+					  method: "unionpay",
+					  status: 1,
+					  totalFee: 4800,
+					  createdAt: "2026-06-05 19:59:32",
+					})
+					this.$store.commit("mqtt/PUSH_ORDER", {
+					  outTradeNo: "TEST2009",
+					  method: "credit",
+					  status: 0,
+					  totalFee: 12345,
+					  createdAt: "2026-06-05 19:57:32",
+					})
+						this.$store.dispatch('deviceProps/fetchProps').then(() => {
+							return this.$store.dispatch('iot/fetchDeviceInfo')
+						}).then(() => {
+							const mqttInfo = this.$store.state.iot ? this.$store.state.iot.mqttInfo : null
+							if (mqttInfo) {
+								this.$store.dispatch('mqtt/connect', mqttInfo)
+								this.$store.dispatch('mqtt/scheduleTokenRefresh')
+							}
+						}).catch((e) => {
+							console.error('[index] MQTT初始化失败:', e)
+						})
 					}
-				}
-				return ''
+				})
 			},
-			parseTime(time, cFormat) {
-				return parseTime(time, cFormat)
+
+				// ── 主题图标路径 ──
+				featIconSrc(name) { return themeDir + "/bottom/" + name + ".png" },
+
+			// ── 特色图标方法 (absolute, 参数化 left) ──
+			getFeatCircleStyle(leftPct) {
+				const s = this.screenHeight * 0.07
+				return `position: absolute; top: ${this.screenHeight * 0.78}px; left: ${this.screenHeight * leftPct}px; width: ${s}px; height: ${s}px; border-radius: ${s / 2}px; background-color: #ffffff; align-items: center; justify-content: center;`
 			},
-			orderShow(order){
-				let text = "收款"
-				if (order.operatorName) {
-					text = order.operatorName+text
-				}else{
-					text = this.showMethod(order.method)+text
-				}
-				return text
+			getFeatIconStyle(leftPct) {
+				const s = this.screenHeight * 0.065
+				return `width: ${s}px; height: ${s}px;`
 			},
-			showMethod(key) {
-				switch (key) {
-					case 'wechat':
-						return '微信支付'
-					case 'alipay':
-						return '支付宝'
-					case 'unionpay':
-						return '银联云闪付'
-					case 'credit':
-						return '信用卡'
-					case 'card':
-						return '银行卡'
-					case 'digital':
-						return '数字货币'
-				}
+			getFeatLabelStyle(leftPct) {
+				const fs = this.screenHeight * 0.016
+				return `position: absolute; top: ${this.screenHeight * 0.86}px; left: ${this.screenHeight * leftPct}px; font-size: ${fs}px; font-weight: 700; color: ${theme.labelColor}; width: ${this.screenHeight * 0.07}px; text-align: center;`
 			},
-			fee(number) { // 是否存在不存在返回0
-				return ((number ? Number(number) : 0)/100).toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,")
+			getFeatDescStyle(leftPct, topPct) {
+				const fs = this.screenHeight * 0.012
+				return `position: absolute; top: ${this.screenHeight * topPct}px; left: ${this.screenHeight * leftPct}px; font-size: ${fs}px; color: ${theme.descColor}; width: ${this.screenHeight * 0.07}px; text-align: center;`
 			},
-			systemUpdate(){
+
+				getOrderCardStyle(status) {
+					const px = this.screenHeight * 0.012
+					const py = this.screenHeight * 0.014
+					const r = this.screenHeight * 0.008
+					const mb = this.screenHeight * 0.008
+					return `flex-direction: row; align-items: center; justify-content: space-between; padding: ${py}px ${px}px; margin-bottom: ${mb}px; border-radius: ${r}px; background-color: #ffffff; border-left-width: 4px; border-left-color: ${getStatusColor(status)};`
+				},
+				getOrderStatusTextStyle(status) {
+					const fs = this.screenHeight * 0.030
+						return `font-size: ${fs}px; font-weight: 400; color: rgba(0,0,0,0.85); lines: 1; text-overflow: ellipsis;`
+					},
+				getOrderFeeStyle(status) {
+					const fs = this.screenHeight * 0.046
+					return `font-size: ${fs}px; font-weight: 900; color: ${getFeeColor(status)};`
+				},
+
+			// ── 工具方法 (复用 @/utils/order) ──
+			fmtFee,
+			getStatusText,
+
+			// ── 系统更新 ──
+			systemUpdate() {
 				// #ifdef APP-PLUS
 				plus.runtime.getProperty(plus.runtime.appid, (widgetInfo) => {
 					this.versionCode = widgetInfo.versionCode
 					this.version = widgetInfo.version
 					uni.request({
-						url: baseTVUrl+'manifest.json',
+						url: baseTVUrl + 'manifest.json',
 						success: (result) => {
-							// 增则替换字符串中文
-							let { versionCode, versionName } = JSON.parse(result.data.replace(/\/\*{1,2}[\s\S]*?\*\//g,""))
-							// 判断版本名是否一致
+							let { versionCode, versionName } = JSON.parse(result.data.replace(/\/\*{1,2}[\s\S]*?\*\//g, ''))
 							if (versionName === widgetInfo.version) {
-								// 如果安装的版本号小于最新发布的版本号，则进行更新
 								if (parseInt(widgetInfo.versionCode) != parseInt(versionCode)) {
-									// 下载wgt更新包
-									let downloadPath = baseTVUrl+plus.runtime.appid+".wgt"
+									let downloadPath = baseTVUrl + plus.runtime.appid + '.wgt'
 									uni.downloadFile({
 										url: downloadPath,
 										success: (downloadResult) => {
 											if (downloadResult.statusCode === 200) {
-												plus.runtime.install(downloadResult.tempFilePath, {
-													force: true // 强制更新
-												}, () => {
-													console.log('热更新成功');
-													plus.runtime.restart();
-												}, (e) => {
-													console.error('热更新失败，错误原因：' + e);
-												});
+												plus.runtime.install(downloadResult.tempFilePath, { force: true }, () => {
+									console.log('热更新成功')
+									plus.runtime.restart()
+								}, (e) => {
+									console.error('热更新失败:', e)
+								})
 											}
 										},
-										fail: (error) => {
-											console.log("uni.downloadFile",error)
-										}
+										fail: (error) => { console.log('download fail', error) }
 									})
-								} else {
-									console.log('你的版本为最新，不需要热更新');
 								}
-							} else {
-								console.log('版本名不一致，请使用整包更新');
 							}
 						},
-						fail: (error) => {
-							 console.log("systemUpdate"+ JSON.stringify(error));
-						}
-					});
-				});
-				//  #endif
-			}
-		}
+						fail: (error) => { console.log('systemUpdate', JSON.stringify(error)) }
+					})
+				})
+				// #endif
+			},
+		},
 	}
 </script>
 
-<style>
-	.icbc-content {
-		flex: 1;
-		flex-direction: row;
-		align-items: center;
-		justify-content: center;
-		background: #9e0b02;
-	}
-	.default-content {
-		flex: 1;
-		flex-direction: row;
-		align-items: center;
-		justify-content: center;
-		background: #9e0b02; 
-		/* background: #7d33ff;*/
-	}
-	.title{
-		flex-direction: row;
-		align-items: center;
-		justify-content: center;
-	}
-	.headerRight{
-		flex-direction: row;
-		align-items: flex-end;
-		justify-content: space-between;
-	}
-	.ordersItem{
-		/* flex: 1; */
-		flex-direction: row;
-		align-items: center;
-		justify-content: space-between;
-	}
-	.ordersLeft{
-		flex-direction: row;
-		align-items: center;
-		justify-content: center;
-	}
-	.ordersLeft1{
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-	}
-	.ordersRight{
-		flex-direction: column;
-		align-items: flex-end;
-		justify-content: space-between;
-		/* padding-right: 10px; */
-	}
-	.ordersStatus{
-		color: #67C23A;
-	}
-	/* .colourIcon{
-		font-family:colourIcon;
-		font-size:26px;
-	} */
-	.one{
-		color: #F56C6C;
-	}
-</style>
+<style src="./index.css"></style>

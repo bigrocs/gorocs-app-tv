@@ -1,4 +1,4 @@
-import { baseUrl } from '@/settings.js'
+import { baseUrl } from '@/settings'
 const state = {
   payQrcodeUrl: '',
 }
