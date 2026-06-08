@@ -63,11 +63,8 @@ const actions = {
   async fetchDeviceInfo({ commit }) {
     commit('SET_LOADING', true)
     commit('SET_ERROR', '')
-    const deviceProps = store.state.deviceProps
-    const label = deviceProps.label
-    const deviceSn = deviceProps.deviceSn
     try {
-      const info = await getDeviceInfo(label, deviceSn)
+      const info = await getDeviceInfo(store.state.deviceProps.deviceSn)
       if (!info) {
         commit('SET_ERROR', '获取设备信息返回为空')
         uni.showModal({ title: '设备异常', content: '获取设备信息返回为空', showCancel: false })

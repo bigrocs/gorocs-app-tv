@@ -1,5 +1,5 @@
 /*
- * @Description: MQTT客户端模块 — 替代WebSocket，管理MQTT连接和订单消息
+ * @Description: MQTT客户端模块 — 管理MQTT连接和订单消息
  */
 import mqtt from 'mqtt/dist/mqtt.js'
 import store from '@/store'
@@ -58,7 +58,6 @@ const mutations = {
 const actions = {
   /**
    * 建立MQTT连接
-   * @param {Object} mqttInfo - MQTT连接信息 { wsUrl, clientId, token, topic }
    */
   connect({ commit, state }, mqttInfo) {
     if (!mqttInfo.wsUrl) {
@@ -88,7 +87,6 @@ const actions = {
     const { wsUrl, clientId, token, topic } = mqttInfo
 
     // APP-PLUS端需要将 wss:// 转换为 wxs://，ws:// 转换为 wx://
-    // 因为 uni-app 在 APP-PLUS 环境下封装了 WebSocket，需要使用特殊协议前缀
     let url = wsUrl
     // #ifdef APP-PLUS
     url = wsUrl.replace(/^wss:\/\//, 'wxs://').replace(/^ws:\/\//, 'wx://')
@@ -124,7 +122,9 @@ const actions = {
     client.on('message', (_topic, payload) => {
       try {
         const data = JSON.parse(payload.toString())
-        store.dispatch('mqtt/handleOrder', data)
+        if (data && data.outTradeNo) {
+          store.dispatch('mqtt/handleOrder', data)
+        }
       } catch (e) {
         console.error('[mqtt] 消息解析失败:', e)
       }
@@ -149,10 +149,10 @@ const actions = {
 
   /**
    * 处理收到的订单消息
+   * MQTT推送的order对象直接包含: outTradeNo, status(1=成功/0=支付中/-1=关闭), totalFee(分), method, createdAt等
    */
   handleOrder({ commit }, order) {
     commit('PUSH_ORDER', order)
-
     // 成功支付的订单触发语音播报
     if (order.status === 1 && order.totalFee > 0) {
       store.dispatch('tts/order', order)
@@ -205,17 +205,14 @@ const actions = {
    * 断开MQTT连接
    */
   disconnect({ commit, state }) {
-    // 取消重连定时器
     if (state.reconnectTimer) {
       clearTimeout(state.reconnectTimer)
       commit('SET_RECONNECT_TIMER', null)
     }
-    // 取消Token刷新定时器
     if (state.tokenRefreshTimer) {
       clearTimeout(state.tokenRefreshTimer)
       commit('SET_TOKEN_REFRESH_TIMER', null)
     }
-    // 销毁客户端
     if (state.client) {
       try {
         state.client.removeAllListeners()

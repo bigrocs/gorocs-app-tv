@@ -29,14 +29,10 @@ export function getMethodName(method) {
  */
 export function getStatusText(status, totalFee) {
   if (status === 1 && totalFee !== undefined && totalFee <= 0) return '退款成功'
-  switch (status) {
-    case 1: return '收款成功'
-    case 0: return '支付中…'
-    case -1: return '支付超时'
-    default: return '未知状态'
-  }
+  if (status === 1) return '收款成功'
+  if (status === -1) return '支付超时'
+  if (status === 0 || status === undefined || status === null || status === '') return '支付中…'
 }
-
 /**
  * 获取订单状态颜色
  * @param {number} status

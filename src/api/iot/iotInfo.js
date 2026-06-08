@@ -18,13 +18,18 @@ function uniPost(url, data) {
       header: { 'Content-Type': 'application/json' },
       data,
       success: (res) => {
+        console.log('[API] 响应状态码:', res.statusCode)
+        console.log('[API] 响应数据:', JSON.stringify(res.data))
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data)
         } else {
           reject(new Error('请求失败: HTTP ' + res.statusCode))
         }
       },
-      fail: (err) => reject(new Error(err.errMsg || '网络请求失败'))
+      fail: (err) => {
+        console.error('[API] 请求失败:', err.errMsg)
+        reject(new Error(err.errMsg || '网络请求失败'))
+      }
     })
   })
 }
@@ -35,22 +40,27 @@ function uniPost(url, data) {
  * @param {string} deviceSn - 设备序列号
  * @returns {Promise<Object|null>} DeviceInfo
  */
-export function getDeviceInfo(label, deviceSn) {
+export function getDeviceInfo(deviceSn) {
   const params = {
     bizContent: {
-      service: 'TV',
-      label: label,
+      service: 'ALIPAY',
+      label: 'T3B00',
       deviceSn: deviceSn
     },
     appId: '1778077994a85f55fd5b09',
     signType: 'RSA2'
   }
 
+  console.log('[API] 请求参数:', JSON.stringify(params))
+
   const signature = rsa2Sign(params)
+  console.log('[API] 签名结果:', signature)
 
   const requestBody = Object.assign({}, params, { sign: signature })
+  const url = baseUrl + 'api/iot/secure/getIotInfo'
+  console.log('[API] 请求URL:', url)
 
-  return uniPost(baseUrl + 'api/iot/secure/getIotInfo', requestBody).then((data) => {
+  return uniPost(url, requestBody).then((data) => {
     if (!data.content) {
       throw new Error('获取设备信息返回为空')
     }
@@ -62,6 +72,7 @@ export function getDeviceInfo(label, deviceSn) {
 
     if (data.sign) {
       const isValid = verifySign(content, data.sign)
+      console.log('[API] 签名验证结果:', isValid)
       if (!isValid) {
         throw new Error('返回签名验证失败')
       }
@@ -75,6 +86,10 @@ export function getDeviceInfo(label, deviceSn) {
       throw new Error(content.returnMsg || '请求失败')
     }
 
+    console.log('[API] 设备信息获取成功:', JSON.stringify(content))
     return content
+  }).catch((err) => {
+    console.error('[API] getDeviceInfo错误:', err.message)
+    throw err
   })
 }

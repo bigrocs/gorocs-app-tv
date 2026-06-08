@@ -8,15 +8,17 @@
 					<image :style="headerLogoStyle" mode="aspectFit" :src="logoSrc"></image>
 				</div>
 					<div class="headerCenter">
-						<div style="flex-direction: column; align-items: flex-end; justify-content: center; margin-right: 30px;">
-							<text :style="connTextStyle" v-if="maintainerText">设备维护: {{maintainerName}}</text>
-							<text :style="connTextStyle" v-if="maintainerText">{{maintainerPhone}}</text>
-						</div>
 						<image :style="headerPhoneIconStyle" mode="aspectFit" src="/static/service.png"></image>
-						<text :style="headerPhoneStyle">400-104-6788</text>
+						<text :style="headerPhoneStyle">{{servicePhone}}</text>
+						<div style="flex-direction: column; align-items: flex-start; margin-left: 5px;">
+							<div style="border-width: 1px; border-color: rgba(255,255,255,0.6); border-radius: 3px; padding: 0 6px;;"><text :style="connTextStyle" v-if="maintainerText">设备维护:</text></div>
+							<div style="flex-direction: row; align-items: center; border-width: 1px; border-color: rgba(255,255,255,0.6); border-radius: 3px; padding: 0 6px;">
+								<text :style="connTextStyle" v-if="maintainerText">{{maintainerName}}</text>
+								<text :style="connTextStyle" v-if="maintainerText">{{maintainerPhone}}</text>
+							</div>
+						</div>
 					</div>
 				<div class="headerRight">
-					<image :style="headerConnIconStyle" mode="aspectFit" :src="mqttStatusIcon"></image>
 				</div>
 			</div>
 
@@ -72,6 +74,7 @@
 						<div style="flex-direction: row; align-items: center;">
 							<image :style="orderHeaderIconStyle" mode="aspectFit" src="/static/icon/order.png"></image>
 							<text :style="orderHeaderTextStyle">订单管理</text>
+								<image :style="orderHeaderIconStyle" mode="aspectFit" :src="mqttStatusIcon"></image>
 						</div>
 						<div :style="deviceInfoStyle">
 							<text :style="deviceInfoTextStyle">分辨率: {{screenWidth}}x{{screenHeight}}</text>
@@ -110,8 +113,8 @@
 	import { formatFee as fmtFee, getStatusColor, getStatusText, getFeeColor } from '@/utils/order'
 	import { getCurrentTime, getCurrentDate, startClock } from '@/utils/datetime'
 
-	const theme = themes[themeName]
-	const themeDir = '/static/theme/' + themeName
+
+		const defaultTheme = 'orange'
 
 	export default {
 		data() {
@@ -127,26 +130,40 @@
 			}
 		},
 		computed: {
+			// ── 动态主题 ──
+			activeTheme() {
+				const config = this.$store.state.iot ? this.$store.state.iot.config : null
+				const name = (config && config.TVTheme) || defaultTheme
+				return themes[name] || themes[defaultTheme]
+			},
+			activeThemeName() {
+				const config = this.$store.state.iot ? this.$store.state.iot.config : null
+				return (config && config.TVTheme) || defaultTheme
+			},
 			// ── 主题图片路径 ──
-			logoSrc() { return themeDir + "/../logo-cyt.png" },
-			middleSrc() { return themeDir + "/middle.png" },
-			promoBgSrc() { return themeDir + "/bottom/bottom_bg.png" },
-			promoTitleSrc() { return themeDir + "/zgbc.png" },
-			promoBottomSrc() { return themeDir + "/yqbc.png" },
+			logoSrc() { return '/static/theme/logo-cyt.png' },
+			middleSrc() { return '/static/theme/' + this.activeThemeName + '/middle.png' },
+			promoBgSrc() { return '/static/theme/' + this.activeThemeName + '/bottom/bottom_bg.png' },
+			promoTitleSrc() { return '/static/theme/' + this.activeThemeName + '/zgbc.png' },
+			promoBottomSrc() { return '/static/theme/' + this.activeThemeName + '/yqbc.png' },
 
 			// ── 页面背景 ──
-			screenBgStyle() { return `background-color: ${theme.bgColor};` },
+			screenBgStyle() { return `background-color: ${this.activeTheme.bgColor};` },
 
 			// ── MQTT 状态 ──
 			mqttConnected() {
 				return this.$store.state.mqtt ? this.$store.state.mqtt.connected : false
 			},
 			mqttStatusIcon() {
-				return '/static/icon/' + (this.mqttConnected ? 'socketStatusOn.png' : 'socketStatusOff.png')
+				return '/static/icon/' + (this.mqttConnected ? 'MQTTactive.png' : 'MQTTclosed.png')
 			},
 			orderList() {
 				return this.$store.state.mqtt ? this.$store.state.mqtt.orderList : []
 			},
+				servicePhone() {
+					const config = this.$store.state.iot ? this.$store.state.iot.config : null
+					return (config && config.TVServicePhone) || '400-104-6788'
+				},
 							maintainerText() {
 								const config = this.$store.state.iot ? this.$store.state.iot.config : null
 					return (this.$store.state.iot && this.$store.state.iot.config && this.$store.state.iot.config.TVMaintainer) || '王梓'
@@ -167,7 +184,7 @@
 				return `
 					width: ${Math.round(this.screenHeight * 16 / 9)}px;
 					height: ${this.screenHeight}px;
-					background-color: ${theme.bgColor};
+					background-color: ${this.activeTheme.bgColor};
 				`
 			},
 
@@ -261,7 +278,7 @@
 					const w = this.screenHeight * 8 / 9
 					const r = this.screenHeight * 0.015
 					const p = this.screenHeight * 0.01
-					return `position: absolute; top: ${this.screenHeight * 0.03}px; left: ${w + this.screenHeight * 0.06}px; width: ${w - this.screenHeight * 0.075}px; height: ${this.screenHeight * 0.95}px; flex-direction: column; background-color: ${theme.panelBg}; border-radius: ${r}px; padding-top: ${p}px; padding-bottom: ${p}px; padding-left: ${this.screenHeight * 0.05}px; padding-right: ${this.screenHeight * 0.05}px;`
+					return `position: absolute; top: ${this.screenHeight * 0.03}px; left: ${w + this.screenHeight * 0.06}px; width: ${w - this.screenHeight * 0.075}px; height: ${this.screenHeight * 0.95}px; flex-direction: column; background-color: ${this.activeTheme.panelBg}; border-radius: ${r}px; padding-top: ${p}px; padding-bottom: ${p}px; padding-left: ${this.screenHeight * 0.05}px; padding-right: ${this.screenHeight * 0.05}px;`
 				},
 				orderListStyle() {
 					return `flex: 1;`
@@ -346,77 +363,6 @@
 							this.currentDate = getCurrentDate()
 						}, 1000)
 
-					// ── 测试订单（共20条，填满面板） ──
-					this.$store.commit("mqtt/PUSH_ORDER", {
-					  outTradeNo: "TEST2000",
-					  method: "wechat",
-					  status: 1,
-					  totalFee: 12800,
-					  createdAt: "2026-06-05 20:15:32",
-					})
-					this.$store.commit("mqtt/PUSH_ORDER", {
-					  outTradeNo: "TEST2001",
-					  method: "alipay",
-					  status: 1,
-					  totalFee: 5600,
-					  createdAt: "2026-06-05 20:13:32",
-					})
-					this.$store.commit("mqtt/PUSH_ORDER", {
-					  outTradeNo: "TEST2002",
-					  method: "unionpay",
-					  status: 1,
-					  totalFee: 35200,
-					  createdAt: "2026-06-05 20:11:32",
-					})
-					this.$store.commit("mqtt/PUSH_ORDER", {
-					  outTradeNo: "TEST2003",
-					  method: "credit",
-					  status: 0,
-					  totalFee: 9900,
-					  createdAt: "2026-06-05 20:09:32",
-					})
-					this.$store.commit("mqtt/PUSH_ORDER", {
-					  outTradeNo: "TEST2004",
-					  method: "card",
-					  status: -1,
-					  totalFee: 1500,
-					  createdAt: "2026-06-05 20:07:32",
-					})
-					this.$store.commit("mqtt/PUSH_ORDER", {
-					  outTradeNo: "TEST2005",
-					  method: "digital",
-					  status: 1,
-					  totalFee: 88800,
-					  createdAt: "2026-06-05 20:05:32",
-					})
-					this.$store.commit("mqtt/PUSH_ORDER", {
-					  outTradeNo: "TEST2006",
-					  method: "wechat",
-					  status: 1,
-					  totalFee: 100,
-					  createdAt: "2026-06-05 20:03:32",
-					})
-					this.$store.commit("mqtt/PUSH_ORDER", {
-					  outTradeNo: "TEST2007",
-					  method: "alipay",
-					  status: 1,
-					  totalFee: 25600,
-					  createdAt: "2026-06-05 20:01:32",
-					})
-					this.$store.commit("mqtt/PUSH_ORDER", {
-					  outTradeNo: "TEST2008",
-					  method: "unionpay",
-					  status: 1,
-					  totalFee: 4800,
-					  createdAt: "2026-06-05 19:59:32",
-					})
-					this.$store.commit("mqtt/PUSH_ORDER", {
-					  outTradeNo: "TEST2009",
-					  method: "credit",
-					  status: 0,
-					  totalFee: 12345,
-					  createdAt: "2026-06-05 19:57:32",
-					})
 						this.$store.dispatch('deviceProps/fetchProps').then(() => {
 							return this.$store.dispatch('iot/fetchDeviceInfo')
 						}).then(() => {
@@ -433,7 +379,7 @@
 			},
 
 				// ── 主题图标路径 ──
-				featIconSrc(name) { return themeDir + "/bottom/" + name + ".png" },
+				featIconSrc(name) { return '/static/theme/' + this.activeThemeName + '/bottom/' + name + '.png' },
 
 			// ── 特色图标方法 (absolute, 参数化 left) ──
 			getFeatCircleStyle(leftPct) {
@@ -446,11 +392,11 @@
 			},
 			getFeatLabelStyle(leftPct) {
 				const fs = this.screenHeight * 0.016
-				return `position: absolute; top: ${this.screenHeight * 0.86}px; left: ${this.screenHeight * leftPct}px; font-size: ${fs}px; font-weight: 700; color: ${theme.labelColor}; width: ${this.screenHeight * 0.07}px; text-align: center;`
+				return `position: absolute; top: ${this.screenHeight * 0.86}px; left: ${this.screenHeight * leftPct}px; font-size: ${fs}px; font-weight: 700; color: ${this.activeTheme.labelColor}; width: ${this.screenHeight * 0.07}px; text-align: center;`
 			},
 			getFeatDescStyle(leftPct, topPct) {
 				const fs = this.screenHeight * 0.012
-				return `position: absolute; top: ${this.screenHeight * topPct}px; left: ${this.screenHeight * leftPct}px; font-size: ${fs}px; color: ${theme.descColor}; width: ${this.screenHeight * 0.07}px; text-align: center;`
+				return `position: absolute; top: ${this.screenHeight * topPct}px; left: ${this.screenHeight * leftPct}px; font-size: ${fs}px; color: ${this.activeTheme.descColor}; width: ${this.screenHeight * 0.07}px; text-align: center;`
 			},
 
 				getOrderCardStyle(status) {

@@ -49,7 +49,8 @@
                 "abiFilters" : [ "armeabi-v7a", "arm64-v8a" ]
             },
             "ios" : {
-                "idfa" : false
+                "idfa" : false,
+                "dSYMs" : false
             },
             /* ios打包配置 */
             "sdkConfigs" : {
