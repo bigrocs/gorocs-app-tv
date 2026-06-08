@@ -23,10 +23,15 @@
 			</div>
 
 			<!-- 时间日期区 (absolute) -->
-			<text :style="dateStyle">{{currentDate}}</text>
-			<text :style="timeStyle">{{currentTime}}</text>
+				<text :style="dateStyle">{{currentDate}}</text>
+				<div :style="weekTimeRowStyle">
+					<text :style="weekStyle">{{currentWeek}}</text>
+					<text :style="timeStyle">{{currentTime}}</text>
+				</div>
 			<text :style="sloganStyle">即时播报·拒绝漏单</text>
-			<image :style="middleImageStyle" mode="aspectFit" :src="middleSrc"></image>
+				<!-- middle图片区域 -->
+				<image :style="middleImageStyle" mode="aspectFit" :src="showPaySuccess ? middleReverseSrc : middleSrc"></image>
+				<text v-if="showPaySuccess" :style="paySuccessTextStyle">支付成功：{{paySuccessFee}}</text>
 
 			<!-- 推广背景图 (absolute, 45%~100%H) -->
 			<image :style="promoBgImageStyle" mode="aspectFill" :src="promoBgSrc"></image>
@@ -111,11 +116,8 @@
 <script>
 	import { baseTVUrl, themeName, themes } from '@/settings'
 	import { formatFee as fmtFee, getStatusColor, getStatusText, getFeeColor } from '@/utils/order'
-	import { getCurrentTime, getCurrentDate, startClock } from '@/utils/datetime'
-
-
-		const defaultTheme = 'orange'
-
+	import { getCurrentTime, getCurrentDate, getCurrentWeek, startClock } from '@/utils/datetime'
+	const defaultTheme = 'orange'
 	export default {
 		data() {
 			return {
@@ -126,7 +128,11 @@
 				versionCode: '',
 				currentTime: '',
 				currentDate: '',
+				currentWeek: '',
 				clockTimer: null,
+				showPaySuccess: false,
+				paySuccessFee: '',
+				paySuccessTimer: null,
 			}
 		},
 		computed: {
@@ -143,6 +149,7 @@
 			// ── 主题图片路径 ──
 			logoSrc() { return '/static/theme/logo-cyt.png' },
 			middleSrc() { return '/static/theme/' + this.activeThemeName + '/middle.png' },
+				middleReverseSrc() { return '/static/middle_reverse.png' },
 			promoBgSrc() { return '/static/theme/' + this.activeThemeName + '/bottom/bottom_bg.png' },
 			promoTitleSrc() { return '/static/theme/' + this.activeThemeName + '/zgbc.png' },
 			promoBottomSrc() { return '/static/theme/' + this.activeThemeName + '/yqbc.png' },
@@ -160,24 +167,27 @@
 			orderList() {
 				return this.$store.state.mqtt ? this.$store.state.mqtt.orderList : []
 			},
-				servicePhone() {
-					const config = this.$store.state.iot ? this.$store.state.iot.config : null
-					return (config && config.TVServicePhone) || '400-104-6788'
-				},
-							maintainerText() {
-								const config = this.$store.state.iot ? this.$store.state.iot.config : null
-					return (this.$store.state.iot && this.$store.state.iot.config && this.$store.state.iot.config.TVMaintainer) || '王梓'
-							},
-							maintainerName() {
-								const config = this.$store.state.iot ? this.$store.state.iot.config : null
-								if (config && config.TVMaintainer) return config.TVMaintainer
-								return '王梓'
-							},
-							maintainerPhone() {
-								const config = this.$store.state.iot ? this.$store.state.iot.config : null
-								if (config && config.TVMaintainerPhone) return config.TVMaintainerPhone
-								return '13301421395'
-							},
+			lastOrder() {
+				return this.$store.state.mqtt ? this.$store.state.mqtt.lastOrder : null
+			},
+			servicePhone() {
+				const config = this.$store.state.iot ? this.$store.state.iot.config : null
+				return (config && config.TVServicePhone) || '400-104-6788'
+			},
+						maintainerText() {
+							const config = this.$store.state.iot ? this.$store.state.iot.config : null
+				return (this.$store.state.iot && this.$store.state.iot.config && this.$store.state.iot.config.TVMaintainer) || ''
+						},
+						maintainerName() {
+							const config = this.$store.state.iot ? this.$store.state.iot.config : null
+							if (config && config.TVMaintainer) return config.TVMaintainer
+							return ''
+						},
+						maintainerPhone() {
+							const config = this.$store.state.iot ? this.$store.state.iot.config : null
+							if (config && config.TVMaintainerPhone) return config.TVMaintainerPhone
+							return ''
+						},
 
 			// ── 容器 ──
 			containerStyle() {
@@ -236,30 +246,43 @@
 
 			// ── 时间日期区 (absolute) ──
 			dateStyle() {
-				const fs = this.screenHeight * 0.049
-				return `position: absolute; top: ${this.screenHeight * 0.10}px; left: ${this.screenHeight * 0.01}px; font-size: ${fs}px; color: #ffffff; font-weight: 600; letter-spacing: 2px;`
+				const fs = this.screenHeight * 0.085
+				return `position: absolute; top: ${this.screenHeight * 0.10}px; left: ${this.screenHeight * 0.01}px; font-size: ${fs}px; color: #ffffff;`
 			},
 			timeStyle() {
-				const fs = this.screenHeight * 0.2
-				return `position: absolute; top: ${this.screenHeight * 0.14}px; left: ${this.screenHeight * 0.08}px; font-size: ${fs}px; font-weight: 900; color: #ffffff; font-family: 'sans-serif-medium'; width: ${this.screenHeight * 0.50}px;`
+				const fs = this.screenHeight * 0.10
+				return `font-size: ${fs}px; font-weight: 700; color: #ffffff;`
 			},
+			weekStyle() {
+				const fs = this.screenHeight * 0.10
+				return `font-size: ${fs}px; color: rgba(255,255,255,0.9); margin-right: ${this.screenHeight * 0.03}px;`
+			},
+			weekTimeRowStyle() {
+			return `position: absolute; top: ${this.screenHeight * 0.21}px; left: ${this.screenHeight * 0.01}px; flex-direction: row; align-items: center; border-width: 1px; border-color: rgba(255,255,255,0.6); border-radius: 4px; padding: 2px 8px;`
+			},
+
 			sloganStyle() {
-				const fs = this.screenHeight * 0.07
-					return `position: absolute; top: ${this.screenHeight * 0.355}px; left: ${this.screenHeight * 0.01}px; font-size: ${fs}px; color: #ffffff; font-weight: 500; background-color: rgba(255, 255, 255, 0.5); border-radius: ${this.screenHeight * 0.02}px; padding: ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px;`
+			const fs = this.screenHeight * 0.07
+				return `position: absolute; top: ${this.screenHeight * 0.355}px; left: ${this.screenHeight * 0.01}px; font-size: ${fs}px; color: #ffffff; font-weight: 500; background-color: rgba(255, 255, 255, 0.5); border-radius: ${this.screenHeight * 0.02}px; padding: ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px;`
 			},
 			middleImageStyle() {
 					const h = this.screenHeight * 0.35
 					const w = h * (240 / 265)
 					return `position: absolute; top: ${this.screenHeight * 0.09}px; left: ${this.screenHeight * 0.605}px; width: ${w}px; height: ${h}px; border-radius: ${this.screenHeight * 0.012}px; overflow: hidden; box-shadow: 0 ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px rgba(0,0,0,0.3);`
 			},
+			paySuccessTextStyle() {
+				const fs = this.screenHeight * 0.03
+				const h = this.screenHeight * 0.35
+				return `position: absolute; top: ${this.screenHeight * 0.09 + h - fs - this.screenHeight * 0.02}px; left: ${this.screenHeight * 0.605}px; font-size: ${fs}px; font-weight: 700; color: #333333;`
+			},
 
-			// ── 推广背景图 (absolute, 45%~100%H) ──
-				promoBgImageStyle() {
-					const h = this.screenHeight * 0.53
-					const w = h * (1185 / 685)
-					const r = this.screenHeight * 0.012
-					return `position: absolute; top: ${this.screenHeight * 0.45}px; left: ${this.screenHeight * 0.008}px; width: ${w}px; height: ${h}px; border-radius: ${r}px; overflow: hidden; box-shadow: 0 ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px rgba(0,0,0,0.3);`
-				},
+		// ── 推广背景图 (absolute, 45%~100%H) ──
+			promoBgImageStyle() {
+				const h = this.screenHeight * 0.53
+				const w = h * (1185 / 685)
+				const r = this.screenHeight * 0.012
+				return `position: absolute; top: ${this.screenHeight * 0.45}px; left: ${this.screenHeight * 0.008}px; width: ${w}px; height: ${h}px; border-radius: ${r}px; overflow: hidden; box-shadow: 0 ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px rgba(0,0,0,0.3);`
+			},
 
 			// ── 中国必诚 / 一起必诚 (absolute) ──
 			promoTitleImageStyle() {
@@ -348,7 +371,24 @@
 			}
 			this.$store.dispatch('mqtt/disconnect')
 		},
+		watch: {
+			lastOrder(val) {
+				if (val && val.status === 1 && val.totalFee > 0) {
+					const fee = ((val.totalFee ? Number(val.totalFee) : 0) / 100).toFixed(2).replace(/.00/g, '')
+					this.triggerPaySuccess(fee + '元')
+				}
+			}
+		},
+
 		methods: {
+			triggerPaySuccess(fee) {
+				if (this.paySuccessTimer) clearTimeout(this.paySuccessTimer)
+				this.paySuccessFee = fee
+				this.showPaySuccess = true
+				this.paySuccessTimer = setTimeout(() => {
+					this.showPaySuccess = false
+				}, 3000)
+			},
 			// ── 初始化 ──
 			init() {
 				uni.getSystemInfo({
@@ -360,7 +400,9 @@
 
 						this.clockTimer = startClock(() => {
 							this.currentTime = getCurrentTime()
+							this.currentWeek = getCurrentWeek()
 							this.currentDate = getCurrentDate()
+							this.currentWeek = getCurrentWeek()
 						}, 1000)
 
 						this.$store.dispatch('deviceProps/fetchProps').then(() => {
