@@ -46,6 +46,10 @@ function feeToAudioList(fen) {
 
 	// 解析小数部分
 	if (decPart.length > 0) {
+		// 整数部分为0时先播报'零'
+		if (parseInt(intPart) === 0) {
+			list.push('zero')
+		}
 		list.push('dian')
 		for (let i = 0; i < decPart.length; i++) {
 			const d = parseInt(decPart[i])

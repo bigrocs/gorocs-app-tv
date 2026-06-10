@@ -21,7 +21,10 @@ const actions = {
     return new Promise((resolve) => {
       try {
         const sysInfo = uni.getSystemInfoSync()
-        commit('SET_DEVICE_SN', sysInfo.deviceId || '')
+        const rawId = sysInfo.deviceId || ''
+        // 取后20位作为设备SN，与设备标签格式一致（如SMIT3B2021A18000523）
+        const sn = rawId.length > 20 ? rawId.slice(-20) : rawId
+        commit('SET_DEVICE_SN', sn)
         commit('SET_LABEL', sysInfo.model || 'AndroidTV')
       } catch (e) {
         console.warn('[device-props] 获取设备信息失败:', e)

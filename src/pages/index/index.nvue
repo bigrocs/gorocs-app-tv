@@ -73,12 +73,14 @@
 						<div style="flex-direction: row; align-items: center;">
 							<image :style="orderHeaderIconStyle" mode="aspectFit" src="/static/icon/order.png"></image>
 							<text :style="orderHeaderTextStyle">订单管理</text>
-								<image :style="orderHeaderIconStyle" mode="aspectFit" :src="mqttStatusIcon"></image>
-						</div>
-						<div :style="deviceInfoStyle">
-							<text :style="deviceInfoTextStyle">分辨率: {{screenWidth}}x{{screenHeight}}</text>
-							<text :style="deviceInfoTextStyle">版本号: v{{version}}.{{versionCode}}</text>
-							<text :style="deviceInfoTextStyle">设备号: {{deviceId}}</text>
+								</div>
+						<div style="flex-direction: row; align-items: center;">
+							<image :style="mqttIconStyle" mode="aspectFit" :src="mqttStatusIcon"></image>
+							<div :style="deviceInfoStyle">
+								<text :style="deviceInfoTextStyle">分辨率: {{screenWidth}}x{{screenHeight}}</text>
+								<text :style="deviceInfoTextStyle">版本号: v{{version}}.{{versionCode}}</text>
+								<text :style="deviceInfoTextStyle">设备号: {{shortDeviceId}}</text>
+							</div>
 						</div>
 					</div>
 				<list v-if="orderList.length" :style="orderListStyle">
@@ -161,6 +163,9 @@
 			orderList() {
 				return this.$store.state.mqtt ? this.$store.state.mqtt.orderList : []
 			},
+			shortDeviceId() {
+				return this.deviceId.length > 20 ? this.deviceId.slice(-20) : this.deviceId
+			},
 			lastOrder() {
 				return this.$store.state.mqtt ? this.$store.state.mqtt.lastOrder : null
 			},
@@ -239,23 +244,23 @@
 
 			// ── 时间日期区 (absolute) ──
 			dateStyle() {
-				const fs = this.screenHeight * 0.049
+				const fs = this.screenHeight * 0.04
 				return `position: absolute; top: ${this.screenHeight * 0.10}px; left: ${this.screenHeight * 0.01}px; font-size: ${fs}px; font-weight: 600; letter-spacing: 2px; color: #ffffff;`
 			},
 						timeStyle() {
-				const fs = this.screenHeight * 0.2
+				const fs = this.screenHeight * 0.15
 				return `position: absolute; top: ${this.screenHeight * 0.14}px; left: ${this.screenHeight * 0.08}px; font-size: ${fs}px; font-weight: 900; color: rgba(255,255,255,0.6); font-family: sans-serif-medium; width: ${this.screenHeight * 0.50}px;`
 			},
 
 			sloganStyle() {
 				const h = this.screenHeight * 0.085
 				const w = h * 6
-				return `position: absolute; top: ${this.screenHeight * 0.34}px; left: ${this.screenHeight * 0.04}px; width: ${w}px; height: ${h}px;`
+				return `position: absolute; top: ${this.screenHeight * 0.34}px; left: ${this.screenHeight * 0.02}px; width: ${w}px; height: ${h}px;`
 			},
 			middleImageStyle() {
-					const h = this.screenHeight * 0.33
+					const h = this.screenHeight * 0.36
 					const w = h * (240 / 265)
-					return `position: absolute; top: ${this.screenHeight * 0.096}px; left: ${this.screenHeight * 0.625}px; width: ${w}px; height: ${h}px; border-radius: ${this.screenHeight * 0.012}px; overflow: hidden; box-shadow: 0 ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px rgba(0,0,0,0.3);`
+					return `position: absolute; top: ${this.screenHeight * 0.096}px; left: ${this.screenHeight * 0.545}px; width: ${w}px; height: ${h}px; border-radius: ${this.screenHeight * 0.012}px; overflow: hidden; box-shadow: 0 ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px rgba(0,0,0,0.3);`
 			},
 			paySuccessTextStyle() {
 				const fs = this.screenHeight * 0.03
@@ -265,10 +270,10 @@
 
 		// ── 推广背景图 (absolute, 45%~100%H) ──
 			promoBgImageStyle() {
-				const h = this.screenHeight * 0.53
+				const h = this.screenHeight * 0.50
 				const w = h * (1185 / 685)
 				const r = this.screenHeight * 0.012
-				return `position: absolute; top: ${this.screenHeight * 0.45}px; left: ${this.screenHeight * 0.008}px; width: ${w}px; height: ${h}px; border-radius: ${r}px; overflow: hidden; box-shadow: 0 ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px rgba(0,0,0,0.3);`
+				return `position: absolute; top: ${this.screenHeight * 0.48}px; left: ${this.screenHeight * 0.008}px; width: ${w}px; height: ${h}px; border-radius: ${r}px; overflow: hidden; box-shadow: 0 ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px rgba(0,0,0,0.3);`
 			},
 
 			// ── 中国必诚 / 一起必诚 (absolute) ──
@@ -285,10 +290,10 @@
 
 			// ── 右侧面板 (absolute) ──
 				rightColumnStyle() {
-					const w = this.screenHeight * 8 / 9
+					const w = this.screenHeight * 8.5 / 9
 					const r = this.screenHeight * 0.015
 					const p = this.screenHeight * 0.01
-					return `position: absolute; top: ${this.screenHeight * 0.03}px; left: ${w + this.screenHeight * 0.06}px; width: ${w - this.screenHeight * 0.075}px; height: ${this.screenHeight * 0.95}px; flex-direction: column; background-color: ${this.activeTheme.panelBg}; border-radius: ${r}px; padding-top: ${p}px; padding-bottom: ${p}px; padding-left: ${this.screenHeight * 0.05}px; padding-right: ${this.screenHeight * 0.05}px;`
+					return `position: absolute; top: ${this.screenHeight * 0.03}px; left: ${w + this.screenHeight * -0.05}px; width: ${w - this.screenHeight * 0.075}px; height: ${this.screenHeight * 0.95}px; flex-direction: column; background-color: ${this.activeTheme.panelBg}; border-radius: ${r}px; padding-top: ${p}px; padding-bottom: ${p}px; padding-left: ${this.screenHeight * 0.05}px; padding-right: ${this.screenHeight * 0.05}px;`
 				},
 				orderListStyle() {
 					return `flex: 1;`
@@ -299,7 +304,7 @@
 						return `flex-direction: row; align-items: center; justify-content: space-between; padding: ${py}px ${px}px; padding-bottom: ${this.screenHeight * 0.009}px; border-bottom-width: 1px; border-bottom-color: #ffffff; margin-bottom: ${py}px;`
 					},
 					orderHeaderIconStyle() {
-						const s = this.screenHeight * 0.025
+						const s = this.screenHeight * 0.045
 						return `width: ${s}px; height: ${s}px; margin-right: ${this.screenHeight * 0.008}px;`
 					},
 					orderHeaderTextStyle() {
@@ -317,8 +322,12 @@
 					maintainerDivStyle() {
 						return `flex-direction: row; align-items: center; margin-left: ${this.screenHeight * 0.02}px; margin-bottom: ${this.screenHeight * 0.003}px;`
 					},
+					mqttIconStyle() {
+						const s = this.screenHeight * 0.05
+						return `width: ${s}px; height: ${s}px; margin-right: ${this.screenHeight * 0.01}px;`
+					},
 					deviceInfoStyle() {
-						return "flex-direction: column; align-items: flex-end; justify-content: center; flex-shrink: 0;"
+						return "flex-direction: column; align-items: flex-start; justify-content: center; flex-shrink: 0;"
 					},
 					deviceInfoTextStyle() {
 						const fs = this.screenHeight * 0.014
