@@ -10,25 +10,19 @@
 					<div class="headerCenter">
 						<image :style="headerPhoneIconStyle" mode="aspectFit" src="/static/service.png"></image>
 						<text :style="headerPhoneStyle">{{servicePhone}}</text>
-						<div style="flex-direction: column; align-items: flex-start; margin-left: 5px;">
-							<div style="border-width: 1px; border-color: rgba(255,255,255,0.6); border-radius: 3px; padding: 0 6px;;"><text :style="connTextStyle" v-if="maintainerText">设备维护:</text></div>
-							<div style="flex-direction: row; align-items: center; border-width: 1px; border-color: rgba(255,255,255,0.6); border-radius: 3px; padding: 0 6px;">
-								<text :style="connTextStyle" v-if="maintainerText">{{maintainerName}}</text>
+						<div :style="maintainerDivStyle">
+								<text :style="connNameStyle" v-if="maintainerText">{{maintainerName}}</text>
 								<text :style="connTextStyle" v-if="maintainerText">{{maintainerPhone}}</text>
 							</div>
 						</div>
-					</div>
 				<div class="headerRight">
 				</div>
 			</div>
 
 			<!-- 时间日期区 (absolute) -->
 				<text :style="dateStyle">{{currentDate}}</text>
-				<div :style="weekTimeRowStyle">
-					<text :style="weekStyle">{{currentWeek}}</text>
-					<text :style="timeStyle">{{currentTime}}</text>
-				</div>
-			<text :style="sloganStyle">即时播报·拒绝漏单</text>
+				<text :style="timeStyle">{{currentTime}}</text>
+			<image :style="sloganStyle" mode="aspectFit" src="/static/jsbbjjld.png"></image>
 				<!-- middle图片区域 -->
 				<image :style="middleImageStyle" mode="aspectFit" :src="showPaySuccess ? middleReverseSrc : middleSrc"></image>
 				<text v-if="showPaySuccess" :style="paySuccessTextStyle">支付成功：{{paySuccessFee}}</text>
@@ -116,7 +110,7 @@
 <script>
 	import { baseTVUrl, themeName, themes } from '@/settings'
 	import { formatFee as fmtFee, getStatusColor, getStatusText, getFeeColor } from '@/utils/order'
-	import { getCurrentTime, getCurrentDate, getCurrentWeek, startClock } from '@/utils/datetime'
+	import { getCurrentTime, getCurrentDate, startClock } from '@/utils/datetime'
 	const defaultTheme = 'orange'
 	export default {
 		data() {
@@ -128,11 +122,11 @@
 				versionCode: '',
 				currentTime: '',
 				currentDate: '',
-				currentWeek: '',
 				clockTimer: null,
 				showPaySuccess: false,
 				paySuccessFee: '',
 				paySuccessTimer: null,
+				lastPayOrderNo: '',
 			}
 		},
 		computed: {
@@ -149,7 +143,7 @@
 			// ── 主题图片路径 ──
 			logoSrc() { return '/static/theme/logo-cyt.png' },
 			middleSrc() { return '/static/theme/' + this.activeThemeName + '/middle.png' },
-				middleReverseSrc() { return '/static/middle_reverse.png' },
+			middleReverseSrc() { return '/static/theme/' + this.activeThemeName + '/middle_reverse.png' },
 			promoBgSrc() { return '/static/theme/' + this.activeThemeName + '/bottom/bottom_bg.png' },
 			promoTitleSrc() { return '/static/theme/' + this.activeThemeName + '/zgbc.png' },
 			promoBottomSrc() { return '/static/theme/' + this.activeThemeName + '/yqbc.png' },
@@ -210,22 +204,21 @@
 					flex-direction: row;
 					align-items: center;
 					justify-content: flex-start;
-					padding-left: ${this.screenHeight * 0.015}px;
-					padding-right: ${this.screenHeight * 0.015}px;
+					padding-right: ${this.screenHeight * 0.01}px;
 				`
 			},
 			headerLogoStyle() {
-				const h = this.screenHeight * 0.1
+				const h = this.screenHeight * 0.065
 				const w = h * 3
-				return `width: ${w}px; height: ${h}px;`
+				return `width: ${w}px; height: ${h}px; margin-right: ${this.screenHeight * 0.02}px;`
 			},
 			headerPhoneIconStyle() {
-				const s = this.screenHeight * 0.038
+				const s = this.screenHeight * 0.045
 				return `width: ${s}px; height: ${s}px; margin-right: ${this.screenHeight * 0.01}px;`
 			},
 			headerPhoneStyle() {
-				const fs = this.screenHeight * 0.044
-				return `font-size: ${fs}px; font-weight: 700; color: #ffffff; margin-right: ${this.screenHeight * 0.05}px;`
+				const fs = this.screenHeight * 0.037
+				return `font-size: ${fs}px; font-weight: 700; color: #ffffff; margin-right: ${this.screenHeight * 0.01}px;padding-bottom:${this.screenHeight * 0.003}`
 			},
 			headerConnIconStyle() {
 				const s = this.screenHeight * 0.015
@@ -246,29 +239,23 @@
 
 			// ── 时间日期区 (absolute) ──
 			dateStyle() {
-				const fs = this.screenHeight * 0.085
-				return `position: absolute; top: ${this.screenHeight * 0.10}px; left: ${this.screenHeight * 0.01}px; font-size: ${fs}px; color: #ffffff;`
+				const fs = this.screenHeight * 0.049
+				return `position: absolute; top: ${this.screenHeight * 0.10}px; left: ${this.screenHeight * 0.01}px; font-size: ${fs}px; font-weight: 600; letter-spacing: 2px; color: #ffffff;`
 			},
-			timeStyle() {
-				const fs = this.screenHeight * 0.10
-				return `font-size: ${fs}px; font-weight: 700; color: #ffffff;`
-			},
-			weekStyle() {
-				const fs = this.screenHeight * 0.10
-				return `font-size: ${fs}px; color: rgba(255,255,255,0.9); margin-right: ${this.screenHeight * 0.03}px;`
-			},
-			weekTimeRowStyle() {
-			return `position: absolute; top: ${this.screenHeight * 0.21}px; left: ${this.screenHeight * 0.01}px; flex-direction: row; align-items: center; border-width: 1px; border-color: rgba(255,255,255,0.6); border-radius: 4px; padding: 2px 8px;`
+						timeStyle() {
+				const fs = this.screenHeight * 0.2
+				return `position: absolute; top: ${this.screenHeight * 0.14}px; left: ${this.screenHeight * 0.08}px; font-size: ${fs}px; font-weight: 900; color: rgba(255,255,255,0.6); font-family: sans-serif-medium; width: ${this.screenHeight * 0.50}px;`
 			},
 
 			sloganStyle() {
-			const fs = this.screenHeight * 0.07
-				return `position: absolute; top: ${this.screenHeight * 0.355}px; left: ${this.screenHeight * 0.01}px; font-size: ${fs}px; color: #ffffff; font-weight: 500; background-color: rgba(255, 255, 255, 0.5); border-radius: ${this.screenHeight * 0.02}px; padding: ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px;`
+				const h = this.screenHeight * 0.085
+				const w = h * 6
+				return `position: absolute; top: ${this.screenHeight * 0.34}px; left: ${this.screenHeight * 0.04}px; width: ${w}px; height: ${h}px;`
 			},
 			middleImageStyle() {
-					const h = this.screenHeight * 0.35
+					const h = this.screenHeight * 0.33
 					const w = h * (240 / 265)
-					return `position: absolute; top: ${this.screenHeight * 0.09}px; left: ${this.screenHeight * 0.605}px; width: ${w}px; height: ${h}px; border-radius: ${this.screenHeight * 0.012}px; overflow: hidden; box-shadow: 0 ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px rgba(0,0,0,0.3);`
+					return `position: absolute; top: ${this.screenHeight * 0.096}px; left: ${this.screenHeight * 0.625}px; width: ${w}px; height: ${h}px; border-radius: ${this.screenHeight * 0.012}px; overflow: hidden; box-shadow: 0 ${this.screenHeight * 0.005}px ${this.screenHeight * 0.015}px rgba(0,0,0,0.3);`
 			},
 			paySuccessTextStyle() {
 				const fs = this.screenHeight * 0.03
@@ -320,8 +307,15 @@
 						return `font-size: ${fs}px; font-weight: 700; color: #ffffff;`
 					},
 					connTextStyle() {
-							const fs = this.screenHeight * 0.025
-							return `font-size: ${fs}px; font-weight: 400; color: rgba(255,255,255,0.85);`
+							const fs = this.screenHeight * 0.037
+							return `font-size: ${fs}px; font-weight: 700; color: #ffffff;`
+					},
+					connNameStyle() {
+							const fs = this.screenHeight * 0.037
+							return `font-size: ${fs}px; font-weight: 700; color: #ffffff; margin-right: ${this.screenHeight * 0.01}px; padding-bottom: ${this.screenHeight * 0.003}px;`
+					},
+					maintainerDivStyle() {
+						return `flex-direction: row; align-items: center; margin-left: ${this.screenHeight * 0.02}px; margin-bottom: ${this.screenHeight * 0.003}px;`
 					},
 					deviceInfoStyle() {
 						return "flex-direction: column; align-items: flex-end; justify-content: center; flex-shrink: 0;"
@@ -373,7 +367,8 @@
 		},
 		watch: {
 			lastOrder(val) {
-				if (val && val.status === 1 && val.totalFee > 0) {
+				if (val && val.status === 1 && val.totalFee > 0 && val.outTradeNo !== this.lastPayOrderNo) {
+					this.lastPayOrderNo = val.outTradeNo
 					const fee = ((val.totalFee ? Number(val.totalFee) : 0) / 100).toFixed(2).replace(/.00/g, '')
 					this.triggerPaySuccess(fee + '元')
 				}
@@ -400,9 +395,7 @@
 
 						this.clockTimer = startClock(() => {
 							this.currentTime = getCurrentTime()
-							this.currentWeek = getCurrentWeek()
 							this.currentDate = getCurrentDate()
-							this.currentWeek = getCurrentWeek()
 						}, 1000)
 
 						this.$store.dispatch('deviceProps/fetchProps').then(() => {

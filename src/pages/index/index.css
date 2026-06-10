@@ -10,12 +10,12 @@
 .headerLeft {
 	flex-direction: row;
 	align-items: center;
-	margin-right: 25px;
+	margin-right: 5px;
 }
 .headerCenter {
 	flex-direction: row;
 	align-items: center;
-	margin-right: 50px;
+	margin-right: 5px;
 }
 .headerRight {
 	flex-direction: row;

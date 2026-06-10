@@ -13,14 +13,16 @@ export function getCurrentTime() {
 }
 
 /**
- * 获取当前日期 "2026年6月8日"
+ * 获取当前日期 "6月1日周一·丙午年四月十六"
  */
 export function getCurrentDate() {
   const now = new Date()
-  const year = now.getFullYear()
   const month = now.getMonth() + 1
   const day = now.getDate()
-  return year + '年' + month + '月' + day + '日'
+  const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const week = weekDays[now.getDay()]
+  const lunar = getLunarDate(now)
+  return month + '月' + day + '日' + week + '·' + lunar
 }
 
 /**
