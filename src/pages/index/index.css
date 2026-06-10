@@ -22,6 +22,16 @@
 	align-items: center;
 }
 
+/* MQTT 呼吸灯 */
+@keyframes mqttBreathing {
+	0%   { opacity: 1; }
+	50%  { opacity: 0.25; }
+	100% { opacity: 1; }
+}
+.mqtt-breathing {
+	animation: mqttBreathing 2s ease-in-out infinite;
+}
+
 /* 订单卡片 */
 .orderCardLeft {
 	flex: 1;

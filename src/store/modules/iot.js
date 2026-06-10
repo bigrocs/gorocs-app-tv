@@ -3,6 +3,7 @@
  */
 import store from '@/store'
 import { getDeviceInfo } from '@/api/iot/iotInfo'
+import { generateQRCode } from '@/utils/qrcode'
 
 const state = {
   config: null,
@@ -19,6 +20,8 @@ const state = {
   service: '',
   loading: false,
   error: '',
+  /** 设备未绑定时生成的二维码 Data URL，非空则显示绑定弹窗 */
+  qrcodeDataUrl: '',
 }
 
 const mutations = {
@@ -35,12 +38,17 @@ const mutations = {
     if (info.sellerId) state.sellerId = info.sellerId
     if (info.sellerName) state.sellerName = info.sellerName
     if (info.service) state.service = info.service
+    // 设备已绑定，清除二维码
+    state.qrcodeDataUrl = ''
   },
   SET_LOADING(state, loading) {
     state.loading = loading
   },
   SET_ERROR(state, error) {
     state.error = error
+  },
+  SET_QRCODE_DATA_URL(state, url) {
+    state.qrcodeDataUrl = url
   },
   CLEAR_IOT(state) {
     state.config = null
@@ -56,6 +64,7 @@ const mutations = {
     state.sellerName = ''
     state.service = ''
     state.error = ''
+    state.qrcodeDataUrl = ''
   },
 }
 
@@ -67,17 +76,32 @@ const actions = {
       const info = await getDeviceInfo(store.state.deviceProps.deviceSn)
       if (!info) {
         commit('SET_ERROR', '获取设备信息返回为空')
-        uni.showModal({ title: '设备异常', content: '获取设备信息返回为空', showCancel: false })
+        // 设备未绑定，生成二维码
+        _generateBindQrcode(commit)
         return
       }
       commit('SET_IOT_INFO', info)
     } catch (e) {
       commit('SET_ERROR', e.message || '获取设备信息失败')
       console.error('[iot] 获取设备信息失败:', e)
+      // 设备未绑定，生成二维码
+      _generateBindQrcode(commit)
     } finally {
       commit('SET_LOADING', false)
     }
   },
+}
+
+/**
+ * 生成设备绑定二维码（与 gorocs-tv 项目链接格式一致）
+ */
+function _generateBindQrcode(commit) {
+  const { deviceSn, label } = store.state.deviceProps
+  if (deviceSn && label) {
+    const url = `https://mock1024.github.io/installer/?deviceSn=${deviceSn}&label=${label}&service=ALIPAY`
+    const dataUrl = generateQRCode(url)
+    commit('SET_QRCODE_DATA_URL', dataUrl)
+  }
 }
 
 export default {

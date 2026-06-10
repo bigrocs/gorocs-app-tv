@@ -73,6 +73,7 @@
     "flyio": "^0.6.2",
     "jsrsasign": "^11.1.0",
     "mqtt": "^4.1.0",
+    "qrcode-generator": "^2.0.4",
     "regenerator-runtime": "^0.12.1",
     "uview-ui": "2.0.31",
     "vue": "^2.6.11",
