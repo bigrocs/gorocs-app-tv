@@ -1,6 +1,6 @@
 {
-    "name" : "必诚付TV",
-    "appid" : "__UNI__1E96CCF",
+    "name" : "诚意通TV",
+    "appid" : "__UNI__EB9529A",
     "description" : "",
     "versionName" : "1.0.0",
     "versionCode" : 197,
@@ -36,14 +36,12 @@
                     "<uses-permission android:name=\"android.permission.GET_ACCOUNTS\"/>",
                     "<uses-permission android:name=\"android.permission.MODIFY_AUDIO_SETTINGS\"/>",
                     "<uses-permission android:name=\"android.permission.MOUNT_UNMOUNT_FILESYSTEMS\"/>",
-                    "<uses-permission android:name=\"android.permission.READ_CONTACTS\"/>",
                     "<uses-permission android:name=\"android.permission.READ_LOGS\"/>",
                     "<uses-permission android:name=\"android.permission.READ_PHONE_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\"/>",
                     "<uses-permission android:name=\"android.permission.RECORD_AUDIO\"/>",
                     "<uses-permission android:name=\"android.permission.VIBRATE\"/>",
                     "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
-                    "<uses-permission android:name=\"android.permission.WRITE_CONTACTS\"/>",
                     "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>"
                 ],
                 "abiFilters" : [ "armeabi-v7a", "arm64-v8a" ]
@@ -96,20 +94,6 @@
         },
         "renderer" : "native",
         "nativePlugins" : {
-            "Fvv-UniTTS" : {
-                "__plugin_info__" : {
-                    "name" : "安卓语音合成 Fvv-UniTTS",
-                    "description" : "安卓平台的tts引擎语音合成",
-                    "platforms" : "Android",
-                    "url" : "https://ext.dcloud.net.cn/plugin?id=2461",
-                    "android_package_name" : "uni.bichengTV",
-                    "ios_bundle_id" : "",
-                    "isCloud" : true,
-                    "bought" : 1,
-                    "pid" : "2461",
-                    "parameters" : {}
-                }
-            },
             "Ikiw-NvueQrcode" : {
                 "__plugin_info__" : {
                     "name" : "Nvue二维码生成原生插件",
