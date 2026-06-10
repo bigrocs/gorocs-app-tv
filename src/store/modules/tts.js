@@ -18,7 +18,7 @@ const methodAudioMap = {
 }
 
 // 数字 0-9 音频名
-const digitAudio = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+const digitAudio = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 /**
  * 将金额（分）转换为音频文件名列表
@@ -48,16 +48,16 @@ function feeToAudioList(fen) {
 	if (decPart.length > 0) {
 		// 整数部分为0时先播报'零'
 		if (parseInt(intPart) === 0) {
-			list.push('zero')
+			list.push('0')
 		}
-		list.push('dian')
+		list.push('unit_dian')
 		for (let i = 0; i < decPart.length; i++) {
 			const d = parseInt(decPart[i])
 			list.push(digitAudio[d])
 		}
 	}
 
-	list.push('yuan')
+	list.push('unit_yuan')
 	return list
 }
 
@@ -75,10 +75,10 @@ function parseInteger(intStr, list) {
 
 	if (wanPart > 0) {
 		parseFourDigits(wanPart, list)
-		list.push('wan')
+		list.push('unit_wan')
 		if (gePart > 0 && gePart < 1000) {
 			// 补零: 10001 → 一万零一
-			list.push('zero')
+			list.push('0')
 		}
 	}
 
@@ -102,25 +102,25 @@ function parseFourDigits(n, list) {
 
 	if (qian > 0) {
 		list.push(digitAudio[qian])
-		list.push('qian')
+		list.push('unit_qian')
 		// 百位为零需要补零
 		if (bai === 0 && (shi > 0 || ge > 0)) {
-			list.push('zero')
+			list.push('0')
 		}
 	}
 
 	if (bai > 0) {
 		list.push(digitAudio[bai])
-		list.push('bai')
+		list.push('unit_bai')
 		// 十位为零需要补零
 		if (shi === 0 && ge > 0) {
-			list.push('zero')
+			list.push('0')
 		}
 	}
 
 	if (shi > 0) {
 		list.push(digitAudio[shi])
-		list.push('shi')
+		list.push('unit_shi')
 	} else if (shi === 0 && bai > 0 && ge === 0) {
 		// 百位有值、十位和个位都为零，不加
 	}
@@ -160,10 +160,7 @@ class AudioPlayer {
 	 */
 	play(audioNames) {
 		if (!audioNames || audioNames.length === 0) return
-
-		// 中断当前播报
 		this.stop()
-
 		this.currentList = audioNames.map(name => AUDIO_BASE + name + '.mp3')
 		this.currentIndex = 0
 		this.playing = true
@@ -208,6 +205,8 @@ class AudioPlayer {
 		}
 	}
 }
+
+
 
 // 单例
 const player = new AudioPlayer()

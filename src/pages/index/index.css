@@ -22,15 +22,7 @@
 	align-items: center;
 }
 
-/* MQTT 呼吸灯 */
-@keyframes mqttBreathing {
-	0%   { opacity: 1; }
-	50%  { opacity: 0.25; }
-	100% { opacity: 1; }
-}
-.mqtt-breathing {
-	animation: mqttBreathing 2s ease-in-out infinite;
-}
+/* MQTT 呼吸灯 — 由 weex animation 模块驱动，见 index.nvue */
 
 /* 订单卡片 */
 .orderCardLeft {

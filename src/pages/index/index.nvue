@@ -45,32 +45,32 @@
 				<image :style="getFeatIconStyle(0.049)" mode="aspectFit" :src="featIconSrc('wallet')"></image>
 			</div>
 			<text :style="getFeatLabelStyle(0.05)">收款便捷</text>
-			<text :style="getFeatDescStyle(0.05, 0.88)">多种收款方式</text>
-			<text :style="getFeatDescStyle(0.05, 0.90)">轻松支付更流畅</text>
+			<text :style="getFeatDescStyle(0.05, 0.90)">多种收款方式</text>
+			<text :style="getFeatDescStyle(0.05, 0.92)">轻松支付更流畅</text>
 
 			<!-- 特色图标2: 资金安全 -->
 			<div :style="getFeatCircleStyle(0.15)">
 				<image :style="getFeatIconStyle(0.169)" mode="aspectFit" :src="featIconSrc('secure')"></image>
 			</div>
 			<text :style="getFeatLabelStyle(0.15)">资金安全</text>
-			<text :style="getFeatDescStyle(0.15, 0.88)">银行级风控保障</text>
-			<text :style="getFeatDescStyle(0.15, 0.90)">资金安全可靠</text>
+			<text :style="getFeatDescStyle(0.15, 0.90)">银行级风控保障</text>
+			<text :style="getFeatDescStyle(0.15, 0.92)">资金安全可靠</text>
 
 			<!-- 特色图标3: 经营清晰 -->
 			<div :style="getFeatCircleStyle(0.26)">
 				<image :style="getFeatIconStyle(0.299)" mode="aspectFit" :src="featIconSrc('report')"></image>
 			</div>
 			<text :style="getFeatLabelStyle(0.26)">经营清晰</text>
-			<text :style="getFeatDescStyle(0.26, 0.88)">收款记录一目了然</text>
-			<text :style="getFeatDescStyle(0.26, 0.90)">对账轻松更省心</text>
+			<text :style="getFeatDescStyle(0.26, 0.90)">收款记录一目了然</text>
+			<text :style="getFeatDescStyle(0.26, 0.92)">对账轻松更省心</text>
 
 			<!-- 特色图标4: 贴心服务 -->
 			<div :style="getFeatCircleStyle(0.37)">
 				<image :style="getFeatIconStyle(0.429)" mode="aspectFit" :src="featIconSrc('support')"></image>
 			</div>
 			<text :style="getFeatLabelStyle(0.37)">贴心服务</text>
-			<text :style="getFeatDescStyle(0.37, 0.88)">专属客服支持</text>
-			<text :style="getFeatDescStyle(0.37, 0.90)">经营路上更安心</text>
+			<text :style="getFeatDescStyle(0.37, 0.90)">专属客服支持</text>
+			<text :style="getFeatDescStyle(0.37, 0.92)">经营路上更安心</text>
 
 			<!-- 右侧面板 (absolute) -->
 			<div :style="rightColumnStyle">
@@ -80,7 +80,7 @@
 							<text :style="orderHeaderTextStyle">订单管理</text>
 								</div>
 						<div style="flex-direction: row; align-items: center;">
-							<image :class="{'mqtt-breathing': mqttConnected}" :style="mqttIconStyle" mode="aspectFit" :src="mqttStatusIcon"></image>
+							<image ref="mqttIcon" :style="mqttIconStyle" mode="aspectFit" :src="mqttStatusIcon"></image>
 							<div :style="deviceInfoStyle">
 								<text :style="deviceInfoTextStyle">分辨率: {{screenWidth}}x{{screenHeight}}</text>
 								<text :style="deviceInfoTextStyle">版本号: v{{version}}.{{versionCode}}</text>
@@ -133,6 +133,7 @@
 	import { baseTVUrl, themeName, themes } from '@/settings'
 	import { formatFee as fmtFee, getStatusColor, getStatusText, getFeeColor } from '@/utils/order'
 	import { getCurrentTime, getCurrentDate, startClock } from '@/utils/datetime'
+	const animation = weex.requireModule('animation')
 	const defaultTheme = 'orange'
 	export default {
 		data() {
@@ -150,6 +151,7 @@
 				paySuccessTimer: null,
 				lastPayOrderNo: '',
 				paySuccessMethod: '',
+				breathTimer: null,
 			}
 		},
 		computed: {
@@ -454,6 +456,7 @@
 				clearInterval(this.clockTimer)
 				this.clockTimer = null
 			}
+			this.stopBreathing()
 			this.$store.dispatch('mqtt/disconnect')
 		},
 		watch: {
@@ -463,6 +466,13 @@
 					const fee = ((val.totalFee ? Number(val.totalFee) : 0) / 100).toFixed(2).replace(/.00/g, '')
 					this.paySuccessMethod = this.showMethod(val.method)
 					this.triggerPaySuccess(fee + '元')
+				}
+			},
+			mqttConnected(val) {
+				if (val) {
+					this.$nextTick(() => this.startBreathing())
+				} else {
+					this.stopBreathing()
 				}
 			}
 		},
@@ -539,7 +549,7 @@
 			},
 			getFeatLabelStyle(leftPct) {
 				const fs = this.screenHeight * 0.016
-				return `position: absolute; top: ${this.screenHeight * 0.86}px; left: ${this.screenHeight * (leftPct - 0.02)}px; font-size: ${fs}px; font-weight: 700; color: ${this.activeTheme.labelColor}; width: ${this.screenHeight * 0.11}px; text-align: center;`
+				return `position: absolute; top: ${this.screenHeight * 0.88}px; left: ${this.screenHeight * (leftPct - 0.02)}px; font-size: ${fs}px; font-weight: 700; color: ${this.activeTheme.labelColor}; width: ${this.screenHeight * 0.11}px; text-align: center;`
 			},
 			getFeatDescStyle(leftPct, topPct) {
 				const fs = this.screenHeight * 0.012
@@ -565,6 +575,40 @@
 			// ── 工具方法 (复用 @/utils/order) ──
 			fmtFee,
 			getStatusText,
+
+			startBreathing() {
+				const el = this.$refs.mqttIcon
+				if (!el) return
+				const step = (opacity) => {
+					animation.transition(el, {
+						styles: { opacity },
+						duration: 1000,
+						timingFunction: "ease-in-out",
+					}, () => {})
+				}
+				const loop = () => {
+					step(0.25)
+					this.breathTimer = setTimeout(() => {
+						step(1)
+						this.breathTimer = setTimeout(loop, 1000)
+					}, 1000)
+				}
+				loop()
+			},
+			stopBreathing() {
+				if (this.breathTimer) {
+					clearTimeout(this.breathTimer)
+					this.breathTimer = null
+				}
+				const el = this.$refs.mqttIcon
+				if (el) {
+					animation.transition(el, {
+						styles: { opacity: 1 },
+						duration: 300,
+						timingFunction: "ease",
+					}, () => {})
+				}
+			},
 
 			// ── 系统更新 ──
 			systemUpdate() {
