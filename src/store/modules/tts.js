@@ -131,27 +131,27 @@ function parseFourDigits(n, list) {
 }
 
 /**
- * 音频播放器 — 按顺序播放音频列表，支持中断新播报
+ * 音频播放器 — 预加载对象池，顺序播放音频列表，支持中断新播报
+ * 优化：所有音频片段预先加载到独立的 InnerAudioContext，
+ *       onEnded 时直接 play 下一个，消除逐个设 src 的加载延迟
  */
+const POOL_SIZE = 20 // 单次播报最多拼接片段数
+
 class AudioPlayer {
 	constructor() {
-		this.innerAudio = null
+		this.pool = []         // InnerAudioContext 对象池
 		this.playing = false
-		this.currentList = []
 		this.currentIndex = 0
-		this._playNext = this._playNext.bind(this)
+		this.totalCount = 0
 	}
 
 	init() {
 		// #ifdef APP-PLUS
-		this.innerAudio = uni.createInnerAudioContext()
-		this.innerAudio.onEnded(this._playNext)
-		this.innerAudio.onError((err) => {
-			console.error('[Audio] 播放错误:', err)
-			this._playNext()
-		})
+		for (let i = 0; i < POOL_SIZE; i++) {
+			this.pool.push(uni.createInnerAudioContext())
+		}
 		// #endif
-		console.log('[Audio] 初始化成功')
+		console.log('[Audio] 初始化成功（预加载池模式）')
 	}
 
 	/**
@@ -161,48 +161,60 @@ class AudioPlayer {
 	play(audioNames) {
 		if (!audioNames || audioNames.length === 0) return
 		this.stop()
-		this.currentList = audioNames.map(name => AUDIO_BASE + name + '.mp3')
+
+		this.totalCount = Math.min(audioNames.length, POOL_SIZE)
 		this.currentIndex = 0
 		this.playing = true
-		this._playCurrent()
+
+		// #ifdef APP-PLUS
+		// 预加载所有音频并绑定回调
+		for (let i = 0; i < this.totalCount; i++) {
+			const ctx = this.pool[i]
+			ctx.src = AUDIO_BASE + audioNames[i] + '.mp3'
+			ctx.offEnded()
+			ctx.offError()
+			ctx.onEnded(() => this._onOneEnd(i))
+			ctx.onError(() => this._onOneEnd(i))
+		}
+
+		// 立即播放第一个（已预加载，无需等待）
+		this.pool[0].play()
+		// #endif
 	}
 
 	stop() {
 		this.playing = false
-		if (this.innerAudio) {
-			this.innerAudio.stop()
+		for (let i = 0; i < this.pool.length; i++) {
+			const ctx = this.pool[i]
+			ctx.stop()
+			ctx.offEnded()
+			ctx.offError()
 		}
-		this.currentList = []
 		this.currentIndex = 0
+		this.totalCount = 0
 	}
 
-	_playCurrent() {
-		if (!this.playing || this.currentIndex >= this.currentList.length) {
-			this.playing = false
-			return
-		}
-		// #ifdef APP-PLUS
-		this.innerAudio.src = this.currentList[this.currentIndex]
-		this.innerAudio.play()
-		// #endif
-	}
-
-	_playNext() {
+	/**
+	 * 单个片段播放完毕回调
+	 */
+	_onOneEnd(index) {
 		if (!this.playing) return
+		// 防止 stop 后残留的回调触发
+		if (index !== this.currentIndex) return
 		this.currentIndex++
-		if (this.currentIndex >= this.currentList.length) {
+		if (this.currentIndex >= this.totalCount) {
 			this.playing = false
 			return
 		}
-		this._playCurrent()
+		this.pool[this.currentIndex].play()
 	}
 
 	destroy() {
 		this.stop()
-		if (this.innerAudio) {
-			this.innerAudio.destroy()
-			this.innerAudio = null
+		for (let i = 0; i < this.pool.length; i++) {
+			this.pool[i].destroy()
 		}
+		this.pool = []
 	}
 }
 
