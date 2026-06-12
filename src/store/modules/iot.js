@@ -96,9 +96,10 @@ const actions = {
  * 生成设备绑定二维码（与 gorocs-tv 项目链接格式一致）
  */
 function _generateBindQrcode(commit) {
-  const { deviceSn, label } = store.state.deviceProps
-  if (deviceSn && label) {
-    const url = `https://mock1024.github.io/installer/?deviceSn=${deviceSn}&label=${label}&service=ALIPAY`
+  const { deviceSn } = store.state.deviceProps
+  if (deviceSn) {
+    // service 固定为 BICHENG，label 固定为 TV
+    const url = `https://mock1024.github.io/installer/?deviceSn=${deviceSn}&label=TV&service=BICHENG`
     const dataUrl = generateQRCode(url)
     commit('SET_QRCODE_DATA_URL', dataUrl)
   }

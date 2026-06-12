@@ -43,8 +43,8 @@ function uniPost(url, data) {
 export function getDeviceInfo(deviceSn) {
   const params = {
     bizContent: {
-      service: 'ALIPAY',
-      label: 'T3B00',
+      service: 'BICHENG',
+      label: 'TV',
       deviceSn: deviceSn
     },
     appId: '1778077994a85f55fd5b09',
