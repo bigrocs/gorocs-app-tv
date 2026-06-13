@@ -232,7 +232,7 @@
 				const h = this.screenHeight * 0.07
 				return `
 					position: absolute;
-					top: ${this.screenHeight * 0.02}px;
+					top: ${this.screenHeight * 0.01}px;
 					left: 0;
 					width: ${Math.round(this.screenHeight * 16 / 9)}px;
 					height: ${h}px;
@@ -338,7 +338,7 @@
 
 			// ── 右侧面板 (absolute) ──
 				rightColumnStyle() {
-					const w = this.screenHeight * 8.5 / 9
+					const w = this.screenHeight * 8.6 / 9
 					const r = this.screenHeight * 0.015
 					const p = this.screenHeight * 0.01
 					return `position: absolute; top: ${this.screenHeight * 0.03}px; left: ${w + this.screenHeight * -0.05}px; width: ${w - this.screenHeight * 0.096}px; height: ${this.screenHeight * 0.95}px; flex-direction: column; background-color: ${this.activeTheme.panelBg}; border-radius: ${r}px; padding-top: ${p}px; padding-bottom: ${p}px; padding-left: ${this.screenHeight * 0.05}px; padding-right: ${this.screenHeight * 0.05}px;`
