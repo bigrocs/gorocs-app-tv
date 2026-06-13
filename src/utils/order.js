@@ -65,3 +65,59 @@ export function formatFee(totalFee) {
   if (totalFee > 0) return '+' + formatted
   return formatted
 }
+
+const cnDigits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九']
+
+/**
+ * 整数部分转中文读法（支持 0–99999999，即到千万级）
+ * @param {number} num 非负整数
+ */
+function integerToChinese(num) {
+  if (num === 0) return ''
+  const units = ['', '十', '百', '千', '万', '十', '百', '千']
+  const str = String(num)
+  const len = str.length
+  let result = ''
+  let zero = false
+  for (let i = 0; i < len; i++) {
+    const d = Number(str[i])
+    const pos = len - 1 - i
+    if (d === 0) {
+      zero = true
+      if (pos === 4) result += '万'   // 万位补“万”，如 10000 → 一万
+    } else {
+      if (zero) {
+        result += '零'
+        zero = false
+      }
+      result += cnDigits[d] + units[pos]
+    }
+  }
+  return result
+}
+
+/**
+ * 金额（分）转中文读法，用于 TTS 播报
+ * 整数部分按十百千读，小数部分用“点”逐位读（避免阿拉伯数字直接交给 TTS）
+ * 例：1→零点零一元 10→零点一元 100→一元 123→一点二三元 1250→十二点五元 10000→一百元
+ * @param {number} totalFee 金额（分）
+ */
+export function amountToChinese(totalFee) {
+  const fen = Math.round(Number(totalFee) || 0)
+  if (fen === 0) return '零元'
+  // 转成“元”的小数形式：整数部分按十百千，小数部分去末尾 0 后逐位读
+  const yuanStr = (fen / 100).toFixed(2)
+  const [intPart, decPart] = yuanStr.split('.')
+  let result = ''
+  const intNum = Number(intPart)
+  result += intNum === 0 ? '零' : integerToChinese(intNum)
+  const decTrimmed = decPart.replace(/0+$/, '')   // 12.50 → 12.5
+  if (decTrimmed) {
+    result += '点'
+    for (let i = 0; i < decTrimmed.length; i++) {
+      result += cnDigits[Number(decTrimmed[i])]
+    }
+  }
+  result += '元'
+  return result
+}
