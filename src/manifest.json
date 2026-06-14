@@ -121,20 +121,6 @@
                     "pid" : "3957",
                     "parameters" : {}
                 }
-            },
-            "Fvv-UniTTS" : {
-                "__plugin_info__" : {
-                    "name" : "Fvv-UniTTS",
-                    "description" : "安卓tts语音合成",
-                    "platforms" : "Android",
-                    "url" : "",
-                    "android_package_name" : "",
-                    "ios_bundle_id" : "",
-                    "isCloud" : false,
-                    "bought" : -1,
-                    "pid" : "",
-                    "parameters" : {}
-                }
             }
         }
     },
