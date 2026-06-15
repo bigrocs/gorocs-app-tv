@@ -24,35 +24,53 @@ export function getMethodName(method) {
 
 /**
  * 获取订单状态文本
- * @param {number} status 订单状态: 1=成功, 0=待支付, -1=已关闭
- * @param {number} totalFee 金额(分)
+ * 退款用负金额标识（totalFee<0）；退款进行中 status 为 undefined（非 0）。
+ * @param {number} status 订单状态: 1=成功, 0/undefined=待支付, -1=已关闭
+ * @param {number} totalFee 金额(分)，<0 表示退款
  */
 export function getStatusText(status, totalFee) {
-  if (status === 1 && totalFee !== undefined && totalFee <= 0) return '退款成功'
+  // 退款（负金额）优先判断：进行中(!status/undefined)/成功(1)/关闭(-1)
+  if (totalFee !== undefined && totalFee < 0) {
+    if (!status) return '退款中…'
+    if (status === 1) return '退款成功'
+    if (status === -1) return '退款关闭'
+  }
   if (status === 1) return '收款成功'
   if (status === -1) return '支付超时'
-  if (status === 0 || status === undefined || status === null || status === '') return '支付中…'
+  if (!status) return '支付中…'
+  return ''
 }
 /**
- * 获取订单状态颜色
+ * 获取订单状态颜色（卡片左边框）
  * @param {number} status
+ * @param {number} totalFee 金额(分)，<0 表示退款
  */
-export function getStatusColor(status) {
-  switch (status) {
-    case 1: return '#67C23A'
-    case 0: return '#E6A23C'
-    case -1: return '#F56C6C'
-    default: return '#909399'
-  }
+export function getStatusColor(status, totalFee) {
+  if (!status) return '#E6A23C' // 退款中 / 支付中 → 黄
+  if (status === -1) return '#F56C6C' // 退款关闭 / 支付超时 → 红
+  if (totalFee !== undefined && totalFee < 0) return '#F56C6C' // 退款成功 → 红
+  return '#333333' // 支付成功 → 黑
 }
 
 /**
  * 获取金额显示颜色
  * @param {number} status
+ * @param {number} totalFee 金额(分)，<0 表示退款
  */
-export function getFeeColor(status) {
+export function getFeeColor(status, totalFee) {
+  if (totalFee !== undefined && totalFee < 0) return '#F56C6C' // 退款：红
   if (status === -1) return '#F56C6C'
   return '#333333'
+}
+
+/**
+ * 获取订单状态文本颜色
+ * @param {number} status
+ * @param {number} totalFee 金额(分)，<0 表示退款
+ */
+export function getStatusTextColor(status, totalFee) {
+  // 与卡片左边框同色：进行中(退款中/支付中)→黄 / 退款成功·退款关闭·支付超时→红 / 支付成功→黑
+  return getStatusColor(status, totalFee)
 }
 
 /**

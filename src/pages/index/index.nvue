@@ -90,16 +90,16 @@
 					</div>
 				<list v-if="orderList.length" :style="orderListStyle">
 					<cell v-for="(item, index) in orderList" :key="item.outTradeNo">
-						<div :style="getOrderCardStyle(item.status)">
+						<div :style="getOrderCardStyle(item.status, item.totalFee)">
 							<div class="orderCardLeft">
 								<image :style="orderIconStyle" mode="aspectFit" :src="'/static/icon/'+item.method+'.png'"></image>
 								<div :style="orderInfoStyle">
-									<text :style="getOrderStatusTextStyle(item.status)">{{getStatusText(item.status, item.totalFee)}}</text>
+									<text :style="getOrderStatusTextStyle(item.status, item.totalFee)">{{getStatusText(item.status, item.totalFee)}}</text>
 									<text :style="orderTimeStyle">{{item.createdAt}}</text>
 								</div>
 							</div>
 							<div class="orderCardRight">
-								<text :style="getOrderFeeStyle(item.status)">{{fmtFee(item.totalFee)}}</text>
+								<text :style="getOrderFeeStyle(item.status, item.totalFee)">{{fmtFee(item.totalFee)}}</text>
 						</div>
 							</div>
 					</cell>
@@ -131,7 +131,7 @@
 
 <script>
 	import { baseTVUrl, themeName, themes } from '@/settings'
-	import { formatFee as fmtFee, getStatusColor, getStatusText, getFeeColor } from '@/utils/order'
+	import { formatFee as fmtFee, getStatusColor, getStatusText, getFeeColor, getStatusTextColor } from '@/utils/order'
 	import { getCurrentTime, getCurrentDate, startClock } from '@/utils/datetime'
 	const animation = weex.requireModule('animation')
 	const defaultTheme = 'orange'
@@ -556,20 +556,20 @@
 				return `position: absolute; top: ${this.screenHeight * topPct}px; left: ${this.screenHeight * (leftPct - 0.02)}px; font-size: ${fs}px; color: ${this.activeTheme.descColor}; width: ${this.screenHeight * 0.11}px; text-align: center;`
 			},
 
-				getOrderCardStyle(status) {
+				getOrderCardStyle(status, totalFee) {
 					const px = this.screenHeight * 0.012
 					const py = this.screenHeight * 0.014
 					const r = this.screenHeight * 0.008
 					const mb = this.screenHeight * 0.008
-					return `flex-direction: row; align-items: center; justify-content: space-between; padding: ${py}px ${px}px; margin-bottom: ${mb}px; border-radius: ${r}px; background-color: #ffffff; border-left-width: 4px; border-left-color: ${getStatusColor(status)};`
+					return `flex-direction: row; align-items: center; justify-content: space-between; padding: ${py}px ${px}px; margin-bottom: ${mb}px; border-radius: ${r}px; background-color: #ffffff; border-left-width: 4px; border-left-color: ${getStatusColor(status, totalFee)};`
 				},
-				getOrderStatusTextStyle(status) {
+				getOrderStatusTextStyle(status, totalFee) {
 					const fs = this.screenHeight * 0.030
-						return `font-size: ${fs}px; font-weight: 400; color: rgba(0,0,0,0.85); lines: 1; text-overflow: ellipsis;`
+						return `font-size: ${fs}px; font-weight: 400; color: ${getStatusTextColor(status, totalFee)}; lines: 1; text-overflow: ellipsis;`
 					},
-				getOrderFeeStyle(status) {
+				getOrderFeeStyle(status, totalFee) {
 					const fs = this.screenHeight * 0.046
-					return `font-size: ${fs}px; font-weight: 900; color: ${getFeeColor(status)};`
+					return `font-size: ${fs}px; font-weight: 900; color: ${getFeeColor(status, totalFee)};`
 				},
 
 			// ── 工具方法 (复用 @/utils/order) ──
