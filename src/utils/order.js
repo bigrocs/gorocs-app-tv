@@ -49,7 +49,7 @@ export function getStatusColor(status, totalFee) {
   if (!status) return '#E6A23C' // 退款中 / 支付中 → 黄
   if (status === -1) return '#F56C6C' // 退款关闭 / 支付超时 → 红
   if (totalFee !== undefined && totalFee < 0) return '#F56C6C' // 退款成功 → 红
-  return '#333333' // 支付成功 → 黑
+  return '#11B986' // 支付成功 → 绿
 }
 
 /**

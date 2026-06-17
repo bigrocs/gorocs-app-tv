@@ -243,16 +243,16 @@
 				`
 			},
 			headerLogoStyle() {
-				const h = this.screenHeight * 0.07
+				const h = this.screenHeight * 0.09
 				const w = h * 3
 				return `width: ${w}px; height: ${h}px; margin-right: ${this.screenHeight * 0.02}px;margin-left: ${this.screenHeight * 0.01}px;`
 			},
 			headerPhoneIconStyle() {
-				const s = this.screenHeight * 0.05
+				const s = this.screenHeight * 0.07
 				return `width: ${s}px; height: ${s}px; margin-right: ${this.screenHeight * 0.01}px;`
 			},
 			headerPhoneStyle() {
-				const fs = this.screenHeight * 0.04
+				const fs = this.screenHeight * 0.05
 				return `font-size: ${fs}px; font-weight: 700; color: #ffffff; margin-right: ${this.screenHeight * 0.01}px;padding-bottom:${this.screenHeight * 0.003}`
 			},
 			headerConnIconStyle() {
@@ -392,7 +392,7 @@
 					return `flex: 1; flex-direction: column; justify-content: center; margin-left: ${this.screenHeight * 0.01}px;`
 				},
 				orderTimeStyle() {
-					const fs = this.screenHeight * 0.014
+					const fs = this.screenHeight * 0.018
 					return `font-size: ${fs}px; color: #909399;`
 				},
 
