@@ -18,7 +18,7 @@ export const icp = '鲁ICP备2021012345号'
 /** 客服热线 */
 export const TVServicePhone = '400-104-6788'
 
-/** 当前主题: 'orange' | 'blue' | 'purple' | 'red' */
+/** 当前主题: 'orange' | 'blue' | 'purple' | 'red' | 'green' */
 export const themeName = 'blue'
 
 /** 主题颜色配置 */
@@ -47,6 +47,13 @@ export const themes = {
   red: {
     bgColor: '#FF1C33',
     labelColor: '#B71C1C',
+    descColor: '#8D6E63',
+    panelBg: 'rgba(255,255,255,0.3)',
+    orderHeaderColor: '#ffffff',
+  },
+  green: {
+    bgColor: '#388E3C',
+    labelColor: '#1B5E20',
     descColor: '#8D6E63',
     panelBg: 'rgba(255,255,255,0.3)',
     orderHeaderColor: '#ffffff',
