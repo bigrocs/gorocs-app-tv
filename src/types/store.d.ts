@@ -10,7 +10,8 @@ export interface MqttState {
   lastOrder: Order | null
   mqttInfo: MqttInfo | null
   tokenRefreshTimer: ReturnType<typeof setTimeout> | null
-  reconnectTimer: ReturnType<typeof setTimeout> | null
+  payingQueue: string[]
+  lastCancelledOrder: Order | null
 }
 
 export interface DevicePropsState {

@@ -3,6 +3,7 @@
  */
 import mqtt from 'mqtt/dist/mqtt.js'
 import store from '@/store'
+import { isPaying } from '@/utils/order'
 
 const state = {
   client: null,
@@ -12,7 +13,9 @@ const state = {
   lastOrder: null,
   mqttInfo: null,
   tokenRefreshTimer: null,
-  reconnectTimer: null,
+  // 取消支付：支付中订单号队列(FIFO，最大容量3) / 被取消订单(预留单条展示钩子)
+  payingQueue: [],
+  lastCancelledOrder: null,
 }
 
 const mutations = {
@@ -31,12 +34,11 @@ const mutations = {
   SET_TOKEN_REFRESH_TIMER(state, timer) {
     state.tokenRefreshTimer = timer
   },
-  SET_RECONNECT_TIMER(state, timer) {
-    state.reconnectTimer = timer
-  },
   PUSH_ORDER(state, order) {
     const existIdx = state.orderList.findIndex((o) => o.outTradeNo === order.outTradeNo)
     if (existIdx !== -1) {
+      // 终态锁定：已顾客取消支付(-10)的订单不再变化
+      if (state.orderList[existIdx].status === -10) return
       // 状态未变化则跳过
       if (state.orderList[existIdx].status === order.status) return
       state.orderList.splice(existIdx, 1, order)
@@ -49,15 +51,43 @@ const mutations = {
     }
     state.lastOrder = order
   },
+  // 取消队列里唯一的一笔支付中订单（仅在 payingQueue.length===1 时调用：单订单无歧义）
+  CANCEL_SOLE_PAYING(state) {
+    const outTradeNo = state.payingQueue[0]
+    state.payingQueue = state.payingQueue.slice(1)
+    const idx = state.orderList.findIndex((o) => o.outTradeNo === outTradeNo)
+    if (idx === -1) return // 已被淘汰出列表
+    const cancelled = Object.assign({}, state.orderList[idx], { status: -10 })
+    state.orderList.splice(idx, 1, cancelled)
+    state.lastCancelledOrder = cancelled
+  },
+  // 维护支付中订单号队列：支付中入列，非支付中出列；第4笔入列时清空仅保留新单（容错，恢复单订单判定）
+  SYNC_PAYING_QUEUE(state, { outTradeNo, paying }) {
+    if (!outTradeNo) return
+    const idx = state.payingQueue.indexOf(outTradeNo)
+    if (paying && idx === -1) {
+      if (state.payingQueue.length >= 3) {
+        state.payingQueue = [outTradeNo]
+      } else {
+        state.payingQueue = state.payingQueue.concat(outTradeNo)
+      }
+    } else if (!paying && idx !== -1) {
+      state.payingQueue = state.payingQueue.filter((no) => no !== outTradeNo)
+    }
+  },
   CLEAR_ORDERS(state) {
     state.orderList = []
     state.lastOrder = null
+    state.payingQueue = []
+    state.lastCancelledOrder = null
   },
 }
 
 const actions = {
   /**
    * 建立MQTT连接
+   * 重连策略：依赖 mqtt.js 内置 reconnectPeriod 自动重连（与 gorocs-tv 参考实现一致），
+   * 不再使用手动 scheduleReconnect 定时器。
    */
   connect({ commit, state }, mqttInfo) {
     if (!mqttInfo.wsUrl) {
@@ -98,7 +128,7 @@ const actions = {
       password: token,
       protocolVersion: 4,
       keepalive: 30,
-      reconnectPeriod: 0,
+      reconnectPeriod: 5000,
       connectTimeout: 10000,
       clean: true,
     }
@@ -122,7 +152,8 @@ const actions = {
     client.on('message', (_topic, payload) => {
       try {
         const data = JSON.parse(payload.toString())
-        if (data && data.outTradeNo) {
+        // 取消广播(-10)无订单号，需单独放行；其余消息需带 outTradeNo
+        if (data && (data.outTradeNo || data.status === -10)) {
           store.dispatch('mqtt/handleOrder', data)
         }
       } catch (e) {
@@ -141,36 +172,38 @@ const actions = {
     })
 
     client.on('offline', () => {
-      console.log('[mqtt] 连接断开')
+      console.log('[mqtt] 连接断开，等待内置重连')
       commit('SET_CONNECTED', false)
-      store.dispatch('mqtt/scheduleReconnect')
     })
   },
 
   /**
    * 处理收到的订单消息
-   * MQTT推送的order对象直接包含: outTradeNo, status(1=成功/0=支付中/-1=关闭), totalFee(分), method, createdAt等
+   * status：1=成功 / 0=支付中 / -1=关闭 / -10=顾客取消支付
+   * 取消广播(-10)仅含状态码、无订单号，与订单状态变更解耦：每条播报一次"顾客取消支付"
+   *（对齐参考项目 gorocs-tv 的 cancelVoiceSeq 逻辑；该项目播报在页面层 watch，
+   *  本项目 APP-PLUS 端页面层未实现 TTS，故在 store 内触发播报）。
    */
-  handleOrder({ commit }, order) {
+  handleOrder({ commit, state }, order) {
+    // 顾客取消支付广播（仅含状态码、无订单号）：每条播报一次；
+    // 仅当支付中队列恰好剩 1 笔时取消该单（单订单无歧义），并发多笔(>=2)无法定位则仅播报。
+    if (order.status === -10) {
+      store.dispatch('tts/speak', { text: '顾客取消支付', id: 'cancel' })
+      if (state.payingQueue.length === 1) {
+        commit('CANCEL_SOLE_PAYING')
+      }
+      return
+    }
     commit('PUSH_ORDER', order)
+    // 维护支付中队列：支付中(非退款)入列，离开则出列
+    commit('SYNC_PAYING_QUEUE', {
+      outTradeNo: order.outTradeNo,
+      paying: isPaying(order.status) && order.totalFee >= 0,
+    })
     // 成功支付的订单触发语音播报
     if (order.status === 1 && order.totalFee > 0) {
       store.dispatch('tts/order', order)
     }
-  },
-
-  /**
-   * 安排重新连接(10秒延迟)
-   */
-  scheduleReconnect({ commit, state }) {
-    if (state.reconnectTimer || state.connecting) return
-    const timer = setTimeout(() => {
-      commit('SET_RECONNECT_TIMER', null)
-      if (state.mqttInfo) {
-        store.dispatch('mqtt/connect', state.mqttInfo)
-      }
-    }, 10000)
-    commit('SET_RECONNECT_TIMER', timer)
   },
 
   /**
@@ -205,10 +238,6 @@ const actions = {
    * 断开MQTT连接
    */
   disconnect({ commit, state }) {
-    if (state.reconnectTimer) {
-      clearTimeout(state.reconnectTimer)
-      commit('SET_RECONNECT_TIMER', null)
-    }
     if (state.tokenRefreshTimer) {
       clearTimeout(state.tokenRefreshTimer)
       commit('SET_TOKEN_REFRESH_TIMER', null)

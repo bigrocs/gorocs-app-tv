@@ -186,6 +186,10 @@
 			orderList() {
 				return this.$store.state.mqtt ? this.$store.state.mqtt.orderList : []
 			},
+			orderScale() {
+				const scale = Number(this.$store.state.iot && this.$store.state.iot.config && this.$store.state.iot.config.TVOrderScale)
+				return scale > 0 ? scale : 1
+			},
 			shortDeviceId() {
 				return this.deviceId.length > 20 ? this.deviceId.slice(-20) : this.deviceId
 			},
@@ -360,15 +364,15 @@
 						return `font-size: ${fs}px; font-weight: 700; color: #ffffff;`
 					},
 					connTextStyle() {
-							const fs = this.screenHeight * 0.035
+							const fs = this.screenHeight * 0.0175
 							return `font-size: ${fs}px; font-weight: 700; color: #ffffff;`
 					},
 					connNameStyle() {
-							const fs = this.screenHeight * 0.035
+							const fs = this.screenHeight * 0.0175
 							return `font-size: ${fs}px; font-weight: 700; color: #ffffff; margin-right: ${this.screenHeight * 0.01}px;`
 					},
 					maintainerDivStyle() {
-						return `flex-direction: row; align-items: center; margin-left: ${this.screenHeight * 0.02}px;`
+						return `flex-direction: column; align-items: flex-start; margin-left: ${this.screenHeight * 0.02}px;`
 					},
 					mqttIconStyle() {
 						const s = this.screenHeight * 0.05
@@ -385,14 +389,14 @@
 
 				// ── 订单图标 ──
 				orderIconStyle() {
-					const s = this.screenHeight * 0.05
+					const s = this.screenHeight * 0.05 * this.orderScale
 					return `width: ${s}px; height: ${s}px;`
 				},
 				orderInfoStyle() {
-					return `flex: 1; flex-direction: column; justify-content: center; margin-left: ${this.screenHeight * 0.01}px;`
+					return `flex: 1; flex-direction: column; justify-content: center; margin-left: ${this.screenHeight * 0.01 * this.orderScale}px;`
 				},
 				orderTimeStyle() {
-					const fs = this.screenHeight * 0.018
+					const fs = this.screenHeight * 0.018 * this.orderScale
 					return `font-size: ${fs}px; font-weight: 900; color: #909399;`
 				},
 
@@ -557,18 +561,18 @@
 			},
 
 				getOrderCardStyle(status, totalFee) {
-					const px = this.screenHeight * 0.012
-					const py = this.screenHeight * 0.014
-					const r = this.screenHeight * 0.008
-					const mb = this.screenHeight * 0.008
+					const px = this.screenHeight * 0.012 * this.orderScale
+					const py = this.screenHeight * 0.014 * this.orderScale
+					const r = this.screenHeight * 0.008 * this.orderScale
+					const mb = this.screenHeight * 0.008 * this.orderScale
 					return `flex-direction: row; align-items: center; justify-content: space-between; padding: ${py}px ${px}px; margin-bottom: ${mb}px; border-radius: ${r}px; background-color: #ffffff; border-left-width: 4px; border-left-color: ${getStatusColor(status, totalFee)};`
 				},
 				getOrderStatusTextStyle(status, totalFee) {
-					const fs = this.screenHeight * 0.030
+					const fs = this.screenHeight * 0.030 * this.orderScale
 						return `font-size: ${fs}px; font-weight: 900; color: ${getStatusTextColor(status, totalFee)}; lines: 1; text-overflow: ellipsis;`
 					},
 				getOrderFeeStyle(status, totalFee) {
-					const fs = this.screenHeight * 0.046
+					const fs = this.screenHeight * 0.046 * this.orderScale
 					return `font-size: ${fs}px; font-weight: 900; color: ${getFeeColor(status, totalFee)};`
 				},
 

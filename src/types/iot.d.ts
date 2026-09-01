@@ -20,6 +20,7 @@ export interface Config {
   TVMaintainerPhone: string;
   TVServicePhone: string;
   TVTheme: string;
+  TVOrderScale?: number;
 }
 
 export interface DeviceInfo {
