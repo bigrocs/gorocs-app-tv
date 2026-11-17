@@ -76,18 +76,13 @@ const actions = {
 
   /**
    * 订单收款播报（支付方式 + 金额均走 TTS）
-   * 文案：收款 + 金额(元，去掉 .00) + 元；有 operatorName 则前缀 operatorName，否则前缀支付方式名
+   * 文案：operatorName（如有）+ 支付方式 + 收款 + 金额(元，去掉 .00) + 元
    */
   order({ commit, state }, order) {
     const method = actions.showMethod(order.method)
     // 替换.00为空防止播报两百点零零元
     const text = '收款' + ((order.totalFee ? Number(order.totalFee) : 0) / 100).toFixed(2).replace(/\.00/g, '') + '元'
-    let final = text
-    if (order.operatorName) {
-      final = order.operatorName + text
-    } else {
-      final = method + text
-    }
+    const final = (order.operatorName || '') + method + text
     console.log('[store/tts] order 播报:', final, '| id=', order.id)
     actions.speak({ commit, state }, { text: final, id: order.id })
   },
